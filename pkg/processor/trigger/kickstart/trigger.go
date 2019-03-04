@@ -17,13 +17,13 @@ limitations under the License.
 package kickstart
 
 import (
-	"time"
-
 	"github.com/nuclio/nuclio/pkg/common"
 	"github.com/nuclio/nuclio/pkg/errors"
 	"github.com/nuclio/nuclio/pkg/functionconfig"
 	"github.com/nuclio/nuclio/pkg/processor/trigger"
+	"github.com/nuclio/nuclio/pkg/processor/trigger/cron"
 	"github.com/nuclio/nuclio/pkg/processor/worker"
+	"time"
 
 	"github.com/nuclio/logger"
 )
@@ -54,13 +54,26 @@ func newTrigger(logger logger.Logger,
 }
 
 func (k *kickstart) Start(checkpoint functionconfig.Checkpoint) error {
-	k.Logger.DebugWith("Kickstarting")
+	k.Logger.DebugWith("Kickstarting", "eventsLength", len(k.configuration.Events))
 
-	k.AllocateWorkerAndSubmitEvent( // nolint: errcheck
-		&k.configuration.Event,
-		k.Logger,
-		10*time.Second)
-
+	for _, event := range k.configuration.Events {
+		go func(event cron.Event) {
+			_, submitError, processError := k.AllocateWorkerAndSubmitEvent(
+				&event,
+				k.Logger,
+				10*time.Second)
+			if submitError != nil {
+				k.Logger.ErrorWith("Event submit error",
+					"event", event,
+					"submitError", submitError)
+			}
+			if processError != nil {
+				k.Logger.ErrorWith("Event process error",
+					"event", event,
+					"processError", processError)
+			}
+		}(event)
+	}
 	return nil
 }
 
