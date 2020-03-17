@@ -28,12 +28,16 @@ jobs:
           kubectl apply -f https://raw.githubusercontent.com/nuclio/nuclio/master/hack/k8s/resources/nuclio-rbac.yaml
           kubectl apply -f https://raw.githubusercontent.com/nuclio/nuclio/master/hack/k8s/resources/nuclio.yaml
           kubectl -n nuclio patch svc nuclio-dashboard  --type='json' -p '[{"op":"replace","path":"/spec/type","value":"NodePort"}]'
+          sleep 5
           dashboard_port=$(kubectl -n nuclio get svc nuclio-dashboard -o json | jq -r '.spec.ports[0].nodePort')
           FUNCTION_BODY=$(echo "def handler(context, event): return \"$(date)\"" | base64)
           JSON_FMT='{"metadata": {"name":"%s"}, "spec": {"handler": "main:handler", "runtime": "python:3.6", "triggers": {"myTrigger": {"kind": "http", "attributes": {"port": 32126, "ingresses": {"http": {"paths": ["/test"]}}}}}, "build": {"functionSourceCode": "%s", "codeEntryType": "sourceCode"}}}\n'
           REQUEST_BODY=$(printf "$JSON_FMT" "my-function" "$FUNCTION_BODY")
+          echo $REQUEST_BODY
+          kubectl -n nuclio get svc nuclio-dashboard -o json
           echo $REQUEST_BODY | http -v $(minikube ip):$dashboard_port/api/functions
-          echo "Waiting for function to be deployed" && sleep 60
+          echo "Waiting for function to be deployed"
+          sleep 60
           #./nuctl deploy -n nuclio -p https://raw.githubusercontent.com/nuclio/nuclio/master/hack/examples/golang/helloworld/helloworld.go --registry localhost:5000 --run-registry localhost:5000 helloworld
           http -v $(minikube ip):32126
         
