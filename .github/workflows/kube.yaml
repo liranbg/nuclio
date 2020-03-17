@@ -1,0 +1,77 @@
+name: Run action and validate environment
+
+on:
+  pull_request:
+    branches:
+      - development
+
+jobs:
+  import_stable:
+    name: Runner
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # Expose common env
+      - name: set-env
+        uses: allenevans/set-env@v1.1.0
+        with:
+          NUCLIO_LABEL: latest
+          FUNCTION_NAME: test-function
+          NAMESPACE: nuclio
+          NUCLIO_NUCTL_CREATE_SYMLINK: false
+
+      # Install Go
+      - uses: actions/setup-go@v2-beta
+        with:
+          go-version: '^1.11.0'
+      
+      # Setup minikube + k8s
+      - uses: manusa/actions-setup-minikube@v1.0.0
+        with:
+          minikube version: 'v1.9.0'
+          kubernetes version: 'v1.17.3'
+
+      # Install helm
+      - uses: azure/setup-helm@v1
+        id: install
+        with:
+          version: 'v3.1.2'
+
+      - name: Prepare cluster
+        run: |
+          kubectl create namespace $NAMESPACE
+          sudo -E $MINIKUBE_HOME/minikube addons enable registry
+
+      - name: Build nuctl + nuclio services
+        run: |
+          make nuctl controller handler-builder-golang-onbuild
+          sudo mv $(go env GOPATH)/bin/nuctl-$NUCLIO_LABEL-linux-amd64 nuctl
+          sudo chmod +x nuctl
+          ./nuctl version
+
+      - name: Install nuclio using helm
+        run: |
+          helm install \
+            --namespace $NAMESPACE \
+            --set controller.image.tag=$NUCLIO_LABEL-amd64 \
+            --set dashboard.image.tag=$NUCLIO_LABEL-amd64 \
+            --set dashboard.baseImagePullPolicy=Never \
+            nuclio hack/k8s/helm/nuclio/
+
+      - name: Deploy function
+        run: |
+          docker ps -a
+          curl localhost:5000/v2/_catalog
+          ./nuctl deploy $FUNCTION_NAME \
+            --path https://raw.githubusercontent.com/nuclio/nuclio/master/hack/examples/golang/helloworld/helloworld.go \
+            --registry localhost:5000 \
+            --run-registry localhost:5000 \
+            --namespace $NAMESPACE \
+            --no-pull
+
+      - name: Invoke function
+        run: |
+          ./nuctl invoke $FUNCTION_NAME \
+            --namespace $NAMESPACE
