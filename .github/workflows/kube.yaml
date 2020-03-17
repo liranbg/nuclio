@@ -23,8 +23,8 @@ jobs:
           kubernetes version: 'v1.15.4'
       - name: minikube addons
         run: |
-          sudo -E minikube addons enable registry
-          sudo -E minikube addons enable metrics-server
+          sudo -E /home/runner/minikube addons enable registry
+          sudo -E /home/runner/minikube addons enable metrics-server
       
       - name: Downloading nuctl
         run: |
