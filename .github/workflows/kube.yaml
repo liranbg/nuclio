@@ -44,4 +44,4 @@ jobs:
       - name: Invoke
         run: |
           FUNCTION_PORT=$(kubectl -n nuclio get service test-function -o=jsonpath='{.spec.ports[0].nodePort}')
-          http -v $(minikube ip):$(FUNCTION_PORT)
+          http -v $(minikube ip):$FUNCTION_PORT
