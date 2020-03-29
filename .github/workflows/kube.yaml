@@ -42,7 +42,7 @@ jobs:
       - name: Prepare cluster
         run: |
           kubectl create namespace $NAMESPACE
-          sudo -E $MINIKUBE_HOME/minikube addons enable registry
+          docker run -d -p 5000:5000 registry:2
 
       - name: Build nuctl + nuclio services
         run: |
@@ -59,13 +59,10 @@ jobs:
             --set dashboard.image.tag=$NUCLIO_LABEL-amd64 \
             --set dashboard.baseImagePullPolicy=Never \
             nuclio hack/k8s/helm/nuclio/
+          sleep 10
 
       - name: Deploy function
         run: |
-          sudo -E $MINIKUBE_HOME/minikube addons enable registry
-          sleep 30
-          docker ps -a
-          curl localhost:5000/v2/_catalog
           ./nuctl deploy $FUNCTION_NAME \
             --path https://raw.githubusercontent.com/nuclio/nuclio/master/hack/examples/golang/helloworld/helloworld.go \
             --registry localhost:5000 \
