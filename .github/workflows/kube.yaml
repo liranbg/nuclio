@@ -62,6 +62,8 @@ jobs:
 
       - name: Deploy function
         run: |
+          sudo -E $MINIKUBE_HOME/minikube addons enable registry
+          sleep 30
           docker ps -a
           curl localhost:5000/v2/_catalog
           ./nuctl deploy $FUNCTION_NAME \
