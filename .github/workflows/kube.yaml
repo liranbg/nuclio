@@ -5,6 +5,12 @@ on:
     branches:
       - development
 
+env:
+  NUCLIO_LABEL: latest
+  FUNCTION_NAME: test-function
+  NAMESPACE: nuclio
+  NUCLIO_NUCTL_CREATE_SYMLINK: false
+
 jobs:
   import_stable:
     name: Runner
@@ -13,20 +19,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      # Expose common env
-      - name: set-env
-        uses: allenevans/set-env@v1.1.0
-        with:
-          NUCLIO_LABEL: latest
-          FUNCTION_NAME: test-function
-          NAMESPACE: nuclio
-          NUCLIO_NUCTL_CREATE_SYMLINK: false
-
       # Install Go
       - uses: actions/setup-go@v2-beta
         with:
           go-version: '^1.11.0'
-      
+
       # Setup minikube + k8s
       - uses: manusa/actions-setup-minikube@v1.0.0
         with:
