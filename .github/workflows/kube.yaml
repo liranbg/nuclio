@@ -50,8 +50,8 @@ jobs:
           kubectl create namespace $NAMESPACE
           docker run -d -p 5000:5000 registry:2
 
-#      - name: Setup tmate session
-#        uses: mxschmitt/action-tmate@v2
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v2
 
       - name: Install nuclio using helm
         run: |
