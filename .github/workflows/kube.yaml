@@ -39,6 +39,9 @@ jobs:
         with:
           version: 'v3.1.2'
 
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v2
+
       # Setup minikube + k8s
       - uses: manusa/actions-setup-minikube@v1.0.1
         with:
@@ -50,9 +53,6 @@ jobs:
         run: |
           kubectl create namespace $NAMESPACE
           docker run -d -p 5000:5000 registry:2
-
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v2
 
       - name: Install nuclio using helm
         run: |
