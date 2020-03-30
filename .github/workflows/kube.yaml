@@ -40,10 +40,11 @@ jobs:
           version: 'v3.1.2'
 
       # Setup minikube + k8s
-      - uses: manusa/actions-setup-minikube@v1.0.0
+      - uses: manusa/actions-setup-minikube@v1.0.1
         with:
           minikube version: 'v1.9.0'
           kubernetes version: 'v1.17.3'
+          github token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Prepare cluster
         run: |
