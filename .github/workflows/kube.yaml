@@ -48,7 +48,7 @@ jobs:
 
       - name: Build nuctl + nuclio services
         run: |
-          make nuctl controller handler-builder-golang-onbuild
+          make nuctl dashboard controller handler-builder-golang-onbuild
           sudo mv $(go env GOPATH)/bin/nuctl-$NUCLIO_LABEL-linux-amd64 nuctl
           sudo chmod +x nuctl
           ./nuctl version
