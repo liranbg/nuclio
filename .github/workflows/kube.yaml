@@ -43,15 +43,15 @@ jobs:
           kubectl create namespace $NAMESPACE
           docker run -d -p 5000:5000 registry:2
 
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v2
+
       - name: Build nuctl + nuclio services
         run: |
           make nuctl controller handler-builder-golang-onbuild
           sudo mv $(go env GOPATH)/bin/nuctl-$NUCLIO_LABEL-linux-amd64 nuctl
           sudo chmod +x nuctl
           ./nuctl version
-
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v2
 
       - name: Install nuclio using helm
         run: |
