@@ -26,11 +26,12 @@ jobs:
         with:
           go-version: '^1.11.0'
 
-      # Setup minikube + k8s
-      - uses: manusa/actions-setup-minikube@v1.0.0
-        with:
-          minikube version: 'v1.9.0'
-          kubernetes version: 'v1.17.3'
+      - name: Build nuctl + nuclio services
+        run: |
+          make nuctl dashboard controller handler-builder-golang-onbuild
+          sudo mv $(go env GOPATH)/bin/nuctl-$NUCLIO_LABEL-linux-amd64 nuctl
+          sudo chmod +x nuctl
+          ./nuctl version
 
       # Install helm
       - uses: azure/setup-helm@v1
@@ -38,20 +39,19 @@ jobs:
         with:
           version: 'v3.1.2'
 
+      # Setup minikube + k8s
+      - uses: manusa/actions-setup-minikube@v1.0.0
+        with:
+          minikube version: 'v1.9.0'
+          kubernetes version: 'v1.17.3'
+
       - name: Prepare cluster
         run: |
           kubectl create namespace $NAMESPACE
           docker run -d -p 5000:5000 registry:2
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v2
-
-      - name: Build nuctl + nuclio services
-        run: |
-          make nuctl dashboard controller handler-builder-golang-onbuild
-          sudo mv $(go env GOPATH)/bin/nuctl-$NUCLIO_LABEL-linux-amd64 nuctl
-          sudo chmod +x nuctl
-          ./nuctl version
+#      - name: Setup tmate session
+#        uses: mxschmitt/action-tmate@v2
 
       - name: Install nuclio using helm
         run: |
