@@ -29,7 +29,7 @@ jobs:
       # Setup minikube + k8s
       - uses: manusa/actions-setup-minikube@v1.0.0
         with:
-          minikube version: 'v1.8.2'
+          minikube version: 'v1.9.0'
           kubernetes version: 'v1.17.3'
 
       # Install helm
@@ -50,18 +50,19 @@ jobs:
           sudo chmod +x nuctl
           ./nuctl version
 
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v2
+
       - name: Install nuclio using helm
         run: |
           helm install \
+            --debug \
             --wait \
             --namespace $NAMESPACE \
             --set controller.image.tag=$NUCLIO_LABEL-amd64 \
             --set dashboard.image.tag=$NUCLIO_LABEL-amd64 \
             --set dashboard.baseImagePullPolicy=Never \
             nuclio hack/k8s/helm/nuclio/
-
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v2
 
       - name: Deploy function
         run: |
