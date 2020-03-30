@@ -10,6 +10,8 @@ env:
   FUNCTION_NAME: test-function
   NAMESPACE: nuclio
   NUCLIO_NUCTL_CREATE_SYMLINK: false
+  ACTIONS_RUNNER_DEBUG: true
+  ACTIONS_STEP_DEBUG: true
 
 jobs:
   import_stable:
@@ -51,12 +53,15 @@ jobs:
       - name: Install nuclio using helm
         run: |
           helm install \
+            --wait \
             --namespace $NAMESPACE \
             --set controller.image.tag=$NUCLIO_LABEL-amd64 \
             --set dashboard.image.tag=$NUCLIO_LABEL-amd64 \
             --set dashboard.baseImagePullPolicy=Never \
             nuclio hack/k8s/helm/nuclio/
-          sleep 10
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v2
 
       - name: Deploy function
         run: |
