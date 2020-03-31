@@ -70,8 +70,8 @@ jobs:
             --set dashboard.baseImagePullPolicy=Never \
             nuclio hack/k8s/helm/nuclio/
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v2
+#      - name: Setup tmate session
+#        uses: mxschmitt/action-tmate@v2
 
       - name: Deploy function
         run: |
