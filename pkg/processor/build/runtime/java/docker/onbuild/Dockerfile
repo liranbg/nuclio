@@ -16,9 +16,9 @@ ARG NUCLIO_LABEL=latest
 ARG NUCLIO_ARCH=amd64
 
 # Supplies processor
-FROM quay.io/nuclio/processor:${NUCLIO_LABEL}-${NUCLIO_ARCH} as processor
+FROM quay.io/nuclio/processor:${NUCLIO_LABEL}-${NUCLIO_ARCH} AS processor
 
-FROM openjdk:9-slim as user-handler-builder
+FROM openjdk:9-slim AS user-handler-builder
 
 RUN apt-get update \
     && apt-get install -y curl \

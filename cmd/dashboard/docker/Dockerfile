@@ -16,7 +16,7 @@
 # Build assets stage: builds the dashboard assets (js, html, css, etc)
 #
 
-FROM node:8 as build-static
+FROM node:8 AS build-static
 
 # copy source tree
 COPY ./pkg/dashboard/ui /home/nuclio/dashboard/src
@@ -33,7 +33,7 @@ RUN npm install -g gulp \
 # Build binary stage: builds the dashboard binary
 #
 
-FROM golang:1.10 as build-binary
+FROM golang:1.10 AS build-binary
 
 # copy source tree
 WORKDIR /go/src/github.com/nuclio/nuclio

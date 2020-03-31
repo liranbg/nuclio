@@ -16,10 +16,10 @@ ARG NUCLIO_LABEL=latest
 ARG NUCLIO_ARCH=amd64
 
 # Supplies processor
-FROM quay.io/nuclio/processor:${NUCLIO_LABEL}-${NUCLIO_ARCH} as processor
+FROM quay.io/nuclio/processor:${NUCLIO_LABEL}-${NUCLIO_ARCH} AS processor
 
 # Supplies wrapper and nuclio-sdk-dotnetcore
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1 as builder
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS builder
 
 # Copy processor
 COPY --from=processor /home/nuclio/bin/processor /home/nuclio/bin/processor
