@@ -31,12 +31,20 @@ jobs:
         with:
           version: 'v3.1.2'
 
-      - name: Build nuctl + nuclio services
+      - name: Build nuctl
         run: |
-          make dashboard controller handler-builder-golang-onbuild nuctl
+          make nuctl
           sudo mv $(go env GOPATH)/bin/nuctl-$NUCLIO_LABEL-linux-amd64 nuctl
           sudo chmod +x nuctl
           ./nuctl version
+
+      - name: Build nuctl + nuclio services
+        run: |
+          make dashboard controller handler-builder-golang-onbuild
+          docker save -o nuclio-services.tar.gz \
+            quay.io/nuclio/handler-builder-golang-onbuild:latest-amd64-alpine \
+            quay.io/nuclio/controller:latest-amd64 \
+            quay.io/nuclio/dashboard:latest-amd64
 
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v2
@@ -52,6 +60,7 @@ jobs:
         run: |
           kubectl create namespace $NAMESPACE
           docker run -d -p 5000:5000 registry:2
+          docker load -i nuclio-services.tar.gz
 
       - name: Install nuclio using helm
         run: |
