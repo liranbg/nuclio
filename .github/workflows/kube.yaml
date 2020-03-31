@@ -46,8 +46,8 @@ jobs:
             quay.io/nuclio/controller:latest-amd64 \
             quay.io/nuclio/dashboard:latest-amd64
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v2
+#      - name: Setup tmate session
+#        uses: mxschmitt/action-tmate@v2
 
       # Setup minikube + k8s
       - uses: manusa/actions-setup-minikube@v1.0.1
