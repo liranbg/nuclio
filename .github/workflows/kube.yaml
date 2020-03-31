@@ -26,6 +26,11 @@ jobs:
         with:
           go-version: '^1.11.0'
 
+      # Install helm
+      - uses: azure/setup-helm@v1
+        with:
+          version: 'v3.1.2'
+
       - name: Build nuctl + nuclio services
         run: |
           make dashboard controller handler-builder-golang-onbuild nuctl
@@ -33,12 +38,6 @@ jobs:
           sudo mv $(go env GOPATH)/bin/nuctl-$NUCLIO_LABEL-linux-amd64 nuctl
           sudo chmod +x nuctl
           ./nuctl version
-
-      # Install helm
-      - uses: azure/setup-helm@v1
-        id: install
-        with:
-          version: 'v3.1.2'
 
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v2
