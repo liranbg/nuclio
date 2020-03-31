@@ -31,23 +31,22 @@ jobs:
         with:
           version: 'v3.1.2'
 
+      - name: Build nuctl + nuclio services
+        run: |
+          make dashboard controller handler-builder-golang-onbuild nuctl
+          sudo mv $(go env GOPATH)/bin/nuctl-$NUCLIO_LABEL-linux-amd64 nuctl
+          sudo chmod +x nuctl
+          ./nuctl version
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v2
+
       # Setup minikube + k8s
       - uses: manusa/actions-setup-minikube@v1.0.1
         with:
           minikube version: 'v1.9.0'
           kubernetes version: 'v1.17.3'
           github token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build nuctl + nuclio services
-        run: |
-          make dashboard controller handler-builder-golang-onbuild nuctl
-          docker images
-          sudo mv $(go env GOPATH)/bin/nuctl-$NUCLIO_LABEL-linux-amd64 nuctl
-          sudo chmod +x nuctl
-          ./nuctl version
-
-#      - name: Setup tmate session
-#        uses: mxschmitt/action-tmate@v2
 
       - name: Prepare cluster
         run: |
