@@ -31,6 +31,13 @@ jobs:
         with:
           version: 'v3.1.2'
 
+      # Setup minikube + k8s
+      - uses: manusa/actions-setup-minikube@v1.0.1
+        with:
+          minikube version: 'v1.9.0'
+          kubernetes version: 'v1.17.3'
+          github token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build nuctl + nuclio services
         run: |
           make dashboard controller handler-builder-golang-onbuild nuctl
@@ -39,15 +46,8 @@ jobs:
           sudo chmod +x nuctl
           ./nuctl version
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v2
-
-      # Setup minikube + k8s
-      - uses: manusa/actions-setup-minikube@v1.0.1
-        with:
-          minikube version: 'v1.9.0'
-          kubernetes version: 'v1.17.3'
-          github token: ${{ secrets.GITHUB_TOKEN }}
+#      - name: Setup tmate session
+#        uses: mxschmitt/action-tmate@v2
 
       - name: Prepare cluster
         run: |
