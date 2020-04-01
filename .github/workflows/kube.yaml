@@ -47,7 +47,7 @@ jobs:
 
       - name: Build nuclio services
         run: |
-          docker login $REPO -u ${{ github.repostitory }} -p ${{ github.token }}
+          docker login $REPO -u ${{ github.actor }} -p ${{ github.token }}
           make dashboard controller handler-builder-golang-onbuild
           docker push $NUCLIO_DOCKER_REPO/handler-builder-golang-onbuild:$NUCLIO_LABEL-amd64-alpine \
               $NUCLIO_DOCKER_REPO/controller:$NUCLIO_LABEL-amd64 \
