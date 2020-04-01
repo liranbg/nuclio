@@ -6,30 +6,24 @@ on:
       - development
 
 env:
-  NUCLIO_LABEL: latest
+  REPO: docker.pkg.github.com
+  NUCLIO_LABEL: ${{ github.sha }}
   FUNCTION_NAME: test-function
   NAMESPACE: nuclio
   NUCLIO_NUCTL_CREATE_SYMLINK: false
-  ACTIONS_RUNNER_DEBUG: true
-  ACTIONS_STEP_DEBUG: true
+  NUCLIO_DOCKER_REPO: docker.pkg.github.com/${{ github.actor }}
 
 jobs:
-  import_stable:
-    name: Runner
+  build_nuctl:
+    name: Build nuctl
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
-      # Install Go
       - uses: actions/setup-go@v2-beta
         with:
           go-version: '^1.11.0'
-
-      # Install helm
-      - uses: azure/setup-helm@v1
-        with:
-          version: 'v3.1.2'
 
       - name: Build nuctl
         run: |
@@ -38,26 +32,60 @@ jobs:
           sudo chmod +x nuctl
           ./nuctl version
 
-      - name: Build nuctl + nuclio services
+      - name: Upload nuctl
+          uses: actions/upload-artifact@v1
+          with:
+            name: nuctl
+            path: nuctl
+
+  build_services:
+    name: Build nuclio services
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build nuclio services
         run: |
+          docker login $REPO -u ${{ github.repostitory }} -p ${{ github.token }}
           make dashboard controller handler-builder-golang-onbuild
-          docker save -o nuclio-services.tar.gz \
-            quay.io/nuclio/handler-builder-golang-onbuild:latest-amd64-alpine \
-            quay.io/nuclio/controller:latest-amd64 \
-            quay.io/nuclio/dashboard:latest-amd64
+          docker push $NUCLIO_DOCKER_REPO/handler-builder-golang-onbuild:$NUCLIO_LABEL-amd64-alpine \
+              $NUCLIO_DOCKER_REPO/controller:$NUCLIO_LABEL-amd64 \
+              $NUCLIO_DOCKER_REPO/dashboard:$NUCLIO_LABEL-amd64
+
+  nuctl_deploy_invoke:
+    name: Deploy and invoke function using nuctl
+    needs:
+      - build_services
+      - build_nuctl
+    runs-on: ubuntu-latest
+    steps:
+
+      # Install helm
+      - uses: azure/setup-helm@v1
+        with:
+          version: 'v3.1.2'
 
       # Setup minikube + k8s
       - uses: manusa/actions-setup-minikube@v1.0.1
         with:
           minikube version: 'v1.9.0'
           kubernetes version: 'v1.17.3'
-          github token: ${{ secrets.GITHUB_TOKEN }}
+          github token: ${{ github.token }}
 
-      - name: Prepare cluster
+      - name: Download nuctl from job
+        uses: actions/download-artifact@v1
+        with:
+          name: nuctl
+
+      - name: Prepare
         run: |
           kubectl create namespace $NAMESPACE
           docker run -d -p 5000:5000 registry:2
-          docker load -i nuclio-services.tar.gz
+          docker login $REPO -u ${{ github.repostitory }} -p ${{ secrets.GITHUB_TOKEN }}
+          docker pull $NUCLIO_DOCKER_REPO/handler-builder-golang-onbuild:$NUCLIO_LABEL-amd64-alpine \
+                        $NUCLIO_DOCKER_REPO/controller:$NUCLIO_LABEL-amd64 \
+                        $NUCLIO_DOCKER_REPO/dashboard:$NUCLIO_LABEL-amd64
 
       - name: Install nuclio using helm
         run: |
@@ -65,6 +93,7 @@ jobs:
             --debug \
             --wait \
             --namespace $NAMESPACE \
+            --set registry.defaultBaseRegistryURL=$NUCLIO_DOCKER_REPO
             --set controller.image.tag=$NUCLIO_LABEL-amd64 \
             --set dashboard.image.tag=$NUCLIO_LABEL-amd64 \
             --set dashboard.baseImagePullPolicy=Never \
