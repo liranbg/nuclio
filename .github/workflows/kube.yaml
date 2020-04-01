@@ -33,10 +33,10 @@ jobs:
           ./nuctl version
 
       - name: Upload nuctl
-          uses: actions/upload-artifact@v1
-          with:
-            name: nuctl
-            path: nuctl
+        uses: actions/upload-artifact@v1
+        with:
+          name: nuctl
+          path: nuctl
 
   build_services:
     name: Build nuclio services
