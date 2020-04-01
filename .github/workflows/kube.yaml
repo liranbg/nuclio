@@ -92,6 +92,9 @@ jobs:
           docker pull $NUCLIO_DOCKER_REPO/dashboard:$NUCLIO_LABEL-amd64
           docker pull $NUCLIO_DOCKER_REPO/handler-builder-golang-onbuild:$NUCLIO_LABEL-amd64-alpine
 
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v2
+
       - name: Install nuclio using helm
         run: |
           helm install \
