@@ -11,7 +11,7 @@ env:
   FUNCTION_NAME: test-function
   NAMESPACE: nuclio
   NUCLIO_NUCTL_CREATE_SYMLINK: false
-  NUCLIO_DOCKER_REPO: docker.pkg.github.com/${{ github.actor }}
+  NUCLIO_DOCKER_REPO: docker.pkg.github.com/${{ github.actor }}/nuclio
 
 jobs:
   build_nuctl:
@@ -48,9 +48,11 @@ jobs:
       - name: Build nuclio services
         run: |
           docker login $REPO -u ${{ github.actor }} -p ${{ github.token }}
-          make controller dashboard handler-builder-golang-onbuild
+          make controller
           docker push $NUCLIO_DOCKER_REPO/controller:$NUCLIO_LABEL-amd64
+          make dashboard
           docker push $NUCLIO_DOCKER_REPO/dashboard:$NUCLIO_LABEL-amd64
+          make handler-builder-golang-onbuild
           docker push $NUCLIO_DOCKER_REPO/handler-builder-golang-onbuild:$NUCLIO_LABEL-amd64-alpine
 
   nuctl_deploy_invoke:
