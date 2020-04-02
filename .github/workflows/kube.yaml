@@ -48,11 +48,9 @@ jobs:
       - name: Build nuclio services
         run: |
           docker login $REPO -u ${{ github.actor }} -p ${{ github.token }}
-          make controller
-          docker push $NUCLIO_DOCKER_REPO/controller:$NUCLIO_LABEL-amd64
-          make dashboard
+          make controller dashboard handler-builder-golang-onbuild
           docker push $NUCLIO_DOCKER_REPO/dashboard:$NUCLIO_LABEL-amd64
-          make handler-builder-golang-onbuild
+          docker push $NUCLIO_DOCKER_REPO/controller:$NUCLIO_LABEL-amd64
           docker push $NUCLIO_DOCKER_REPO/handler-builder-golang-onbuild:$NUCLIO_LABEL-amd64-alpine
 
   nuctl_deploy_invoke:
@@ -97,15 +95,20 @@ jobs:
 
       - name: Install nuclio using helm
         run: |
-          helm install \
-            --debug \
-            --wait \
-            --namespace $NAMESPACE \
-            --set registry.defaultOnbuildRegistryURL=$NUCLIO_DOCKER_REPO \
-            --set controller.image.tag=$NUCLIO_LABEL-amd64 \
-            --set dashboard.image.tag=$NUCLIO_LABEL-amd64 \
-            --set dashboard.baseImagePullPolicy=Never \
-            nuclio hack/k8s/helm/nuclio/
+          cat << EOF | helm install --debug --wait --namespace $NAMESPACE -f - nuclio hack/k8s/helm/nuclio/
+          controller:
+            image:
+              tag: $NUCLIO_LABEL-amd64
+              repository: $NUCLIO_DOCKER_REPO/controller
+              pullPolicy: Never
+          dashboard:
+            image:
+              tag: $NUCLIO_LABEL-amd64
+              repository: $NUCLIO_DOCKER_REPO/dashboard
+              pullPolicy: Never
+          registry:
+            defaultOnbuildRegistryURL: $NUCLIO_DOCKER_REPO
+          EOF
 
       - name: Deploy function
         run: |
