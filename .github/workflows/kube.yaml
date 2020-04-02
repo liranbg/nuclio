@@ -58,7 +58,7 @@ jobs:
   nuctl_deploy_invoke:
     name: Deploy and invoke function using nuctl
     needs:
-      - build_services
+      - build_docker_images
       - build_nuctl
     runs-on: ubuntu-latest
     steps:
