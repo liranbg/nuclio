@@ -35,7 +35,7 @@ jobs:
       - name: Upload nuctl
         uses: actions/upload-artifact@v1
         with:
-          name: nuctl
+          name: nuctl-bin
           path: nuctl
 
   build_services:
@@ -79,11 +79,11 @@ jobs:
       - name: Download nuctl from job
         uses: actions/download-artifact@v1
         with:
-          name: nuctl
+          name: nuctl-bin
 
       - name: Prepare
         run: |
-          mv ./nuctl/nuctl . && chmod +x nuctl
+          mv ./nuctl-bin/nuctl . && chmod +x nuctl
           kubectl create namespace $NAMESPACE
           docker run -d -p 5000:5000 registry:2
           docker login $REPO -u ${{ github.actor }} -p ${{ github.token }}
