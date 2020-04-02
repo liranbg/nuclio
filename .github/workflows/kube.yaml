@@ -83,6 +83,7 @@ jobs:
 
       - name: Prepare
         run: |
+          mv ./nuctl/nuctl . && chmod +x nuctl
           kubectl create namespace $NAMESPACE
           docker run -d -p 5000:5000 registry:2
           docker login $REPO -u ${{ github.actor }} -p ${{ github.token }}
