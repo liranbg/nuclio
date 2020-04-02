@@ -12,6 +12,7 @@ env:
   NAMESPACE: nuclio
   NUCLIO_NUCTL_CREATE_SYMLINK: false
   NUCLIO_DOCKER_REPO: docker.pkg.github.com/${{ github.actor }}/nuclio
+  NUCLIO_DASHBOARD_DEFAULT_ONBUILD_REGISTRY_URL: docker.pkg.github.com/${{ github.actor }}
 
 jobs:
   build_nuctl:
