@@ -60,10 +60,10 @@ jobs:
 
   nuctl_deploy_invoke:
     name: Deploy and invoke function using nuctl
+    runs-on: ubuntu-latest
     needs:
       - build_docker_images
       - build_nuctl
-    runs-on: ubuntu-latest
     steps:
 
       - name: Checkout
@@ -81,7 +81,7 @@ jobs:
           kubernetes version: 'v1.17.3'
           github token: ${{ github.token }}
 
-      - name: Download nuctl from job
+      - name: Download build artifacts
         uses: actions/download-artifact@v1
         with:
           name: nuctl-bin
