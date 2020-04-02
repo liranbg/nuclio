@@ -1,4 +1,4 @@
-name: Run action and validate environment
+name: Nuclio CI over K8s
 
 on:
   pull_request:
@@ -21,31 +21,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - uses: actions/setup-go@v2-beta
+      - name: Install go
+        uses: actions/setup-go@v2-beta
         with:
-          go-version: '^1.11.0'
+          go-version: '^1.14.0'
 
-      - name: Build nuctl
+      - name: Build
         run: |
           make nuctl
           sudo mv $(go env GOPATH)/bin/nuctl-$NUCLIO_LABEL-linux-amd64 nuctl
           sudo chmod +x nuctl
           ./nuctl version
 
-      - name: Upload nuctl
+      - name: Upload
         uses: actions/upload-artifact@v1
         with:
           name: nuctl-bin
           path: nuctl
 
-  build_services:
-    name: Build nuclio services
+  build_docker_images:
+    name: Build nuclio docker images
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Build nuclio services
+      - name: Build
         run: |
           docker login $REPO -u ${{ github.actor }} -p ${{ github.token }}
           make controller dashboard handler-builder-golang-onbuild
@@ -64,13 +65,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      # Install helm
-      - uses: azure/setup-helm@v1
+      - name: Install helm
+        uses: azure/setup-helm@v1
         with:
           version: 'v3.1.2'
 
-      # Setup minikube + k8s
-      - uses: manusa/actions-setup-minikube@v1.0.1
+      - name: Setup k8s using minikube
+        uses: manusa/actions-setup-minikube@v1.0.1
         with:
           minikube version: 'v1.9.0'
           kubernetes version: 'v1.17.3'
@@ -91,7 +92,7 @@ jobs:
           docker pull $NUCLIO_DOCKER_REPO/dashboard:$NUCLIO_LABEL-amd64
           docker pull $NUCLIO_DOCKER_REPO/handler-builder-golang-onbuild:$NUCLIO_LABEL-amd64-alpine
 
-      - name: Install nuclio using helm
+      - name: Helm install nuclio
         run: |
           cat << EOF | helm install --debug --wait --namespace $NAMESPACE -f - nuclio hack/k8s/helm/nuclio/
           controller:
