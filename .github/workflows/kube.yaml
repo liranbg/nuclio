@@ -30,7 +30,7 @@ jobs:
       - name: Build
         run: |
           make nuctl
-          sudo mv $(go env GOPATH)/bin/nuctl-$NUCLIO_LABEL-linux-amd64 nuctl
+          sudo mv $(go env GOPATH)/bin/nuctl-${NUCLIO_LABEL}-linux-amd64 nuctl
           sudo chmod +x nuctl
           ./nuctl version
 
@@ -51,14 +51,14 @@ jobs:
         run: |
           make controller dashboard handler-builder-golang-onbuild
         env:
-          NUCLIO_DOCKER_REPO: $REPO/$REPO_OWNER/$REPO_NAME
+          NUCLIO_DOCKER_REPO: ${REPO}/${REPO_OWNER}/${REPO_NAME}
 
       - name: Push
         run: |
-          docker login $REPO -u $REPO_OWNER -p ${{ github.token }}
-          docker push $REPO/$REPO_OWNER/$REPO_NAME/dashboard:$NUCLIO_LABEL-amd64
-          docker push $REPO/$REPO_OWNER/$REPO_NAME/controller:$NUCLIO_LABEL-amd64
-          docker push $REPO/$REPO_OWNER/$REPO_NAME/handler-builder-golang-onbuild:$NUCLIO_LABEL-amd64-alpine
+          docker login ${REPO} -u ${REPO_OWNER} -p ${{ github.token }}
+          docker push ${REPO}/${REPO_OWNER}/${REPO_NAME}/dashboard:${NUCLIO_LABEL}-amd64
+          docker push ${REPO}/${REPO_OWNER}/${REPO_NAME}/controller:${NUCLIO_LABEL}-amd64
+          docker push ${REPO}/${REPO_OWNER}/${REPO_NAME}/handler-builder-golang-onbuild:${NUCLIO_LABEL}-amd64-alpine
 
   nuctl_deploy_invoke:
     name: Deploy and invoke function using nuctl
@@ -91,46 +91,46 @@ jobs:
       - name: Prepare
         run: |
           mv ./nuctl-bin/nuctl . && chmod +x nuctl
-          kubectl create namespace $NAMESPACE
+          kubectl create namespace ${NAMESPACE}
           docker run -d -p 5000:5000 registry:2
-          docker login $REPO -u $REPO_OWNER -p ${{ github.token }}
-          docker pull $REPO/$REPO_OWNER/$REPO_NAME/controller:$NUCLIO_LABEL-amd64
-          docker pull $REPO/$REPO_OWNER/$REPO_NAME/dashboard:$NUCLIO_LABEL-amd64
-          docker pull $REPO/$REPO_OWNER/$REPO_NAME/handler-builder-golang-onbuild:$NUCLIO_LABEL-amd64-alpine
+          docker login ${REPO} -u ${REPO_OWNER} -p ${{ github.token }}
+          docker pull ${REPO}/${REPO_OWNER}/${REPO_NAME}/controller:${NUCLIO_LABEL}-amd64
+          docker pull ${REPO}/${REPO_OWNER}/${REPO_NAME}/dashboard:${NUCLIO_LABEL}-amd64
+          docker pull ${REPO}/${REPO_OWNER}/${REPO_NAME}/handler-builder-golang-onbuild:${NUCLIO_LABEL}-amd64-alpine
 
       - name: Helm install nuclio
         run: |
-          cat << EOF | helm install --debug --wait --namespace $NAMESPACE -f - nuclio hack/k8s/helm/nuclio/
+          cat << EOF | helm install --debug --wait --namespace ${NAMESPACE} -f - nuclio hack/k8s/helm/nuclio/
           controller:
             image:
-              tag: $NUCLIO_LABEL-amd64
-              repository: $REPO/$REPO_OWNER/$REPO_NAME/controller
+              tag: ${NUCLIO_LABEL}-amd64
+              repository: ${REPO}/${REPO_OWNER}/${REPO_NAME}/controller
               pullPolicy: Never
           dashboard:
             image:
-              tag: $NUCLIO_LABEL-amd64
-              repository: $REPO/$REPO_OWNER/$REPO_NAME/dashboard
+              tag: ${NUCLIO_LABEL}-amd64
+              repository: ${REPO}/${REPO_OWNER}/${REPO_NAME}/dashboard
               pullPolicy: Never
           registry:
-            defaultOnbuildRegistryURL: $REPO/$REPO_OWNER/$REPO_NAME
+            defaultOnbuildRegistryURL: ${REPO}/${REPO_OWNER}/${REPO_NAME}
           EOF
 
       - name: Deploy function
         run: |
           ./nuctl \
             --verbose \
-            deploy $FUNCTION_NAME \
+            deploy ${FUNCTION_NAME} \
             --path https://raw.githubusercontent.com/nuclio/nuclio/master/hack/examples/golang/helloworld/helloworld.go \
             --registry localhost:5000 \
             --run-registry localhost:5000 \
-            --namespace $NAMESPACE \
+            --namespace ${NAMESPACE} \
             --no-pull
         env:
-          NUCLIO_DASHBOARD_DEFAULT_ONBUILD_REGISTRY_URL: $REPO/REPO_OWNER
+          NUCLIO_DASHBOARD_DEFAULT_ONBUILD_REGISTRY_URL: ${REPO}/${REPO_OWNER}
 
       - name: Invoke function
         run: |
           ./nuctl \
             --verbose \
-            invoke $FUNCTION_NAME \
-            --namespace $NAMESPACE
+            invoke ${FUNCTION_NAME} \
+            --namespace ${NAMESPACE}
