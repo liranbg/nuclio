@@ -19,6 +19,9 @@ jobs:
     name: Build nuctl
     runs-on: ubuntu-latest
     steps:
+      - name: Print details
+        run: echo ${{ github.event }}
+
       - name: Checkout
         uses: actions/checkout@v2
 
