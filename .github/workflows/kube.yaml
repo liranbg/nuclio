@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Print details
-        run: echo ${{ github.event }}
+        run: cat $GITHUB_EVENT_PATH
 
       - name: Checkout
         uses: actions/checkout@v2
