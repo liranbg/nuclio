@@ -7,7 +7,7 @@ on:
 
 env:
   REPO: docker.pkg.github.com
-  REPO_OWNER: ${{ github.event.repo.owner.login }}
+  REPO_OWNER: ${{ github.event.repository.owner.login }}
   REPO_NAME: nuclio
   NUCLIO_LABEL: ${{ github.sha }}
   FUNCTION_NAME: test-function
