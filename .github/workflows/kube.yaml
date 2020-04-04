@@ -105,7 +105,7 @@ jobs:
           mv ./nuctl-bin/nuctl . && chmod +x nuctl
           kubectl create namespace ${NAMESPACE}
           docker run -d -p 5000:5000 registry:2
-          docker load -i nuctl-docker-images/nuctl_docker_images.tar.gz
+          docker load -i nuctl-docker-images/nuclio_docker_images.tar.gz
 
       - name: Helm install nuclio
         run: |
