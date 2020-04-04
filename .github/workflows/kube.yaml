@@ -7,21 +7,18 @@ on:
 
 env:
   REPO: docker.pkg.github.com
+  REPO_OWNER: ${{ github.event.repo.owner.login }}
+  REPO_NAME: nuclio
   NUCLIO_LABEL: ${{ github.sha }}
   FUNCTION_NAME: test-function
   NAMESPACE: nuclio
   NUCLIO_NUCTL_CREATE_SYMLINK: false
-  NUCLIO_DOCKER_REPO: docker.pkg.github.com/${{ github.actor }}/nuclio
-  NUCLIO_DASHBOARD_DEFAULT_ONBUILD_REGISTRY_URL: docker.pkg.github.com/${{ github.actor }}
 
 jobs:
   build_nuctl:
     name: Build nuctl
     runs-on: ubuntu-latest
     steps:
-      - name: Print details
-        run: cat $GITHUB_EVENT_PATH
-
       - name: Checkout
         uses: actions/checkout@v2
 
@@ -53,13 +50,15 @@ jobs:
       - name: Build
         run: |
           make controller dashboard handler-builder-golang-onbuild
+        env:
+          NUCLIO_DOCKER_REPO: $REPO/$REPO_OWNER/$REPO_NAME
 
       - name: Push
         run: |
-          docker login $REPO -u ${{ github.actor }} -p ${{ github.token }}
-          docker push $NUCLIO_DOCKER_REPO/dashboard:$NUCLIO_LABEL-amd64
-          docker push $NUCLIO_DOCKER_REPO/controller:$NUCLIO_LABEL-amd64
-          docker push $NUCLIO_DOCKER_REPO/handler-builder-golang-onbuild:$NUCLIO_LABEL-amd64-alpine
+          docker login $REPO -u $REPO_OWNER -p ${{ github.token }}
+          docker push $REPO/$REPO_OWNER/$REPO_NAME/dashboard:$NUCLIO_LABEL-amd64
+          docker push $REPO/$REPO_OWNER/$REPO_NAME/controller:$NUCLIO_LABEL-amd64
+          docker push $REPO/$REPO_OWNER/$REPO_NAME/handler-builder-golang-onbuild:$NUCLIO_LABEL-amd64-alpine
 
   nuctl_deploy_invoke:
     name: Deploy and invoke function using nuctl
@@ -94,10 +93,10 @@ jobs:
           mv ./nuctl-bin/nuctl . && chmod +x nuctl
           kubectl create namespace $NAMESPACE
           docker run -d -p 5000:5000 registry:2
-          docker login $REPO -u ${{ github.actor }} -p ${{ github.token }}
-          docker pull $NUCLIO_DOCKER_REPO/controller:$NUCLIO_LABEL-amd64
-          docker pull $NUCLIO_DOCKER_REPO/dashboard:$NUCLIO_LABEL-amd64
-          docker pull $NUCLIO_DOCKER_REPO/handler-builder-golang-onbuild:$NUCLIO_LABEL-amd64-alpine
+          docker login $REPO -u $REPO_OWNER -p ${{ github.token }}
+          docker pull $REPO/$REPO_OWNER/$REPO_NAME/controller:$NUCLIO_LABEL-amd64
+          docker pull $REPO/$REPO_OWNER/$REPO_NAME/dashboard:$NUCLIO_LABEL-amd64
+          docker pull $REPO/$REPO_OWNER/$REPO_NAME/handler-builder-golang-onbuild:$NUCLIO_LABEL-amd64-alpine
 
       - name: Helm install nuclio
         run: |
@@ -105,28 +104,33 @@ jobs:
           controller:
             image:
               tag: $NUCLIO_LABEL-amd64
-              repository: $NUCLIO_DOCKER_REPO/controller
+              repository: $REPO/$REPO_OWNER/$REPO_NAME/controller
               pullPolicy: Never
           dashboard:
             image:
               tag: $NUCLIO_LABEL-amd64
-              repository: $NUCLIO_DOCKER_REPO/dashboard
+              repository: $REPO/$REPO_OWNER/$REPO_NAME/dashboard
               pullPolicy: Never
           registry:
-            defaultOnbuildRegistryURL: $NUCLIO_DOCKER_REPO
+            defaultOnbuildRegistryURL: $REPO/$REPO_OWNER/$REPO_NAME
           EOF
 
       - name: Deploy function
         run: |
-          ./nuctl --verbose \
+          ./nuctl \
+            --verbose \
             deploy $FUNCTION_NAME \
             --path https://raw.githubusercontent.com/nuclio/nuclio/master/hack/examples/golang/helloworld/helloworld.go \
             --registry localhost:5000 \
             --run-registry localhost:5000 \
             --namespace $NAMESPACE \
             --no-pull
+        env:
+          NUCLIO_DASHBOARD_DEFAULT_ONBUILD_REGISTRY_URL: $REPO/REPO_OWNER
 
       - name: Invoke function
         run: |
-          ./nuctl invoke $FUNCTION_NAME \
+          ./nuctl \
+            --verbose \
+            invoke $FUNCTION_NAME \
             --namespace $NAMESPACE
