@@ -59,7 +59,7 @@ jobs:
             ${REPO}/${REPO_OWNER}/${REPO_NAME}/dashboard:${NUCLIO_LABEL}-amd64 \
             ${REPO}/${REPO_OWNER}/${REPO_NAME}/controller:${NUCLIO_LABEL}-amd64 \
             ${REPO}/${REPO_OWNER}/${REPO_NAME}/handler-builder-golang-onbuild:${NUCLIO_LABEL}-amd64-alpine \
-            | gzip > -o nuclio_docker_images.tar.gz
+            | gzip > nuclio_docker_images.tar.gz
 
       - name: Upload
         uses: actions/upload-artifact@v1
