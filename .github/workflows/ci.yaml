@@ -124,15 +124,17 @@ jobs:
           kubernetes version: 'v1.17.3'
           github token: ${{ github.token }}
 
-      - uses: actions/download-artifact@v1
+      - name: Fetch nuctl binary
+        uses: actions/download-artifact@v1
         with:
           name: nuctl-bin
 
-      - uses: actions/download-artifact@v1
+      - name: Fetch nuclio docker images
+        uses: actions/download-artifact@v1
         with:
           name: nuclio-docker-images
 
-      - name: Prepare
+      - name: Prepare k8s cluster
         run: |
           mv ./nuctl-bin/nuctl . && chmod +x nuctl
           kubectl create namespace ${NAMESPACE}
