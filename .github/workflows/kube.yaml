@@ -98,7 +98,7 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v1
         with:
-          name: nuctl-docker-images
+          name: nuclio-docker-images
 
       - name: Prepare
         run: |
