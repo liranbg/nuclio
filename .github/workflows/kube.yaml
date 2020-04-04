@@ -53,12 +53,19 @@ jobs:
         env:
           NUCLIO_DOCKER_REPO: ${{ env.REPO }}/${{ env.REPO_OWNER }}/${{ env.REPO_NAME }}
 
-      - name: Push
+      - name: Save
         run: |
-          docker login ${REPO} -u ${REPO_OWNER} -p ${{ github.token }}
-          docker push ${REPO}/${REPO_OWNER}/${REPO_NAME}/dashboard:${NUCLIO_LABEL}-amd64
-          docker push ${REPO}/${REPO_OWNER}/${REPO_NAME}/controller:${NUCLIO_LABEL}-amd64
-          docker push ${REPO}/${REPO_OWNER}/${REPO_NAME}/handler-builder-golang-onbuild:${NUCLIO_LABEL}-amd64-alpine
+          docker save \
+            ${REPO}/${REPO_OWNER}/${REPO_NAME}/dashboard:${NUCLIO_LABEL}-amd64 \
+            ${REPO}/${REPO_OWNER}/${REPO_NAME}/controller:${NUCLIO_LABEL}-amd64 \
+            ${REPO}/${REPO_OWNER}/${REPO_NAME}/handler-builder-golang-onbuild:${NUCLIO_LABEL}-amd64-alpine \
+            | gzip > -o nuclio_docker_images.tar.gz
+
+      - name: Upload
+        uses: actions/upload-artifact@v1
+        with:
+          name: nuctl-docker-images
+          path: nuclio_docker_images.tar.gz
 
   nuctl_deploy_invoke:
     name: Deploy and invoke function using nuctl
@@ -88,15 +95,17 @@ jobs:
         with:
           name: nuctl-bin
 
+      - name: Download build artifacts
+        uses: actions/download-artifact@v1
+        with:
+          name: nuctl-docker-images
+
       - name: Prepare
         run: |
           mv ./nuctl-bin/nuctl . && chmod +x nuctl
           kubectl create namespace ${NAMESPACE}
           docker run -d -p 5000:5000 registry:2
-          docker login ${REPO} -u ${REPO_OWNER} -p ${{ github.token }}
-          docker pull ${REPO}/${REPO_OWNER}/${REPO_NAME}/controller:${NUCLIO_LABEL}-amd64
-          docker pull ${REPO}/${REPO_OWNER}/${REPO_NAME}/dashboard:${NUCLIO_LABEL}-amd64
-          docker pull ${REPO}/${REPO_OWNER}/${REPO_NAME}/handler-builder-golang-onbuild:${NUCLIO_LABEL}-amd64-alpine
+          docker load -i nuctl-docker-images/nuctl_docker_images.tar.gz
 
       - name: Helm install nuclio
         run: |
