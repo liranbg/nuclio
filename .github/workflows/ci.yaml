@@ -52,7 +52,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: Run short tests suite
+      - name: Run short test suites
         run: make test-short
 
   build_nuctl:
