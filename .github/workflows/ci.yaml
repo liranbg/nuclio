@@ -1,4 +1,4 @@
-name: Nuclio CI over K8s
+name: Nuclio CI
 
 on:
   pull_request:
@@ -15,6 +15,50 @@ env:
   NUCLIO_NUCTL_CREATE_SYMLINK: false
 
 jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install go
+        uses: actions/setup-go@v2-beta
+        with:
+          go-version: '^1.14.0'
+
+      - name: lint
+        run: make lint
+
+      - uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+  short_test:
+    name: Short test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install go
+        uses: actions/setup-go@v2-beta
+        with:
+          go-version: '^1.14.0'
+
+      - name: Run short tests suite
+        run: make test-short
+
+      - uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
   build_nuctl:
     name: Build nuctl
     runs-on: ubuntu-latest
