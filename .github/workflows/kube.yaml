@@ -51,7 +51,7 @@ jobs:
         run: |
           make controller dashboard handler-builder-golang-onbuild
         env:
-          NUCLIO_DOCKER_REPO: ${REPO}/${REPO_OWNER}/${REPO_NAME}
+          NUCLIO_DOCKER_REPO: ${{ env.REPO }}/${{ env.REPO_OWNER }}/${{ env.REPO_NAME }}
 
       - name: Push
         run: |
@@ -126,7 +126,7 @@ jobs:
             --namespace ${NAMESPACE} \
             --no-pull
         env:
-          NUCLIO_DASHBOARD_DEFAULT_ONBUILD_REGISTRY_URL: ${REPO}/${REPO_OWNER}
+          NUCLIO_DASHBOARD_DEFAULT_ONBUILD_REGISTRY_URL: ${{ env.REPO }}/${{ env.REPO_OWNER }}
 
       - name: Invoke function
         run: |
