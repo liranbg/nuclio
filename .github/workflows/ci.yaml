@@ -6,9 +6,8 @@ on:
       - development
 
 env:
-  REPO: docker.pkg.github.com
+  REPO: quay.io
   REPO_OWNER: ${{ github.event.repository.owner.login }}
-  REPO_NAME: nuclio
   NUCLIO_LABEL: ${{ github.sha }}
   FUNCTION_NAME: test-function
   NAMESPACE: nuclio
@@ -88,14 +87,14 @@ jobs:
         run: |
           make controller dashboard handler-builder-golang-onbuild
         env:
-          NUCLIO_DOCKER_REPO: ${{ env.REPO }}/${{ env.REPO_OWNER }}/${{ env.REPO_NAME }}
+          NUCLIO_DOCKER_REPO: ${{ env.REPO }}/${{ env.REPO_OWNER }}
 
       - name: Save
         run: |
           docker save \
-            ${REPO}/${REPO_OWNER}/${REPO_NAME}/dashboard:${NUCLIO_LABEL}-amd64 \
-            ${REPO}/${REPO_OWNER}/${REPO_NAME}/controller:${NUCLIO_LABEL}-amd64 \
-            ${REPO}/${REPO_OWNER}/${REPO_NAME}/handler-builder-golang-onbuild:${NUCLIO_LABEL}-amd64-alpine \
+            ${REPO}/${REPO_OWNER}/dashboard:${NUCLIO_LABEL}-amd64 \
+            ${REPO}/${REPO_OWNER}/controller:${NUCLIO_LABEL}-amd64 \
+            ${REPO}/${REPO_OWNER}/handler-builder-golang-onbuild:${NUCLIO_LABEL}-amd64-alpine \
             | gzip > nuclio_docker_images.tar.gz
 
       - name: Upload
@@ -147,15 +146,15 @@ jobs:
           controller:
             image:
               tag: ${NUCLIO_LABEL}-amd64
-              repository: ${REPO}/${REPO_OWNER}/${REPO_NAME}/controller
+              repository: ${REPO}/${REPO_OWNER}/controller
               pullPolicy: Never
           dashboard:
             image:
               tag: ${NUCLIO_LABEL}-amd64
-              repository: ${REPO}/${REPO_OWNER}/${REPO_NAME}/dashboard
+              repository: ${REPO}/${REPO_OWNER}/dashboard
               pullPolicy: Never
           registry:
-            defaultOnbuildRegistryURL: ${REPO}/${REPO_OWNER}/${REPO_NAME}
+            defaultOnbuildRegistryURL: ${REPO}/${REPO_OWNER}
           EOF
 
       - name: Deploy function
