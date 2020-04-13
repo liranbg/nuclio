@@ -17,17 +17,11 @@ limitations under the License.
 package factory
 
 import (
-	"os"
-	"path/filepath"
-
-	"github.com/nuclio/nuclio/pkg/common"
-	"github.com/nuclio/nuclio/pkg/containerimagebuilderpusher"
 	"github.com/nuclio/nuclio/pkg/platform"
-	"github.com/nuclio/nuclio/pkg/platform/config"
 	"github.com/nuclio/nuclio/pkg/platform/kube"
 	"github.com/nuclio/nuclio/pkg/platform/local"
+	"github.com/nuclio/nuclio/pkg/platformconfig"
 
-	"github.com/mitchellh/go-homedir"
 	"github.com/nuclio/errors"
 	"github.com/nuclio/logger"
 )
@@ -36,7 +30,7 @@ import (
 // and probes
 func CreatePlatform(parentLogger logger.Logger,
 	platformType string,
-	platformConfiguration interface{},
+	platformConfiguration *platformconfig.Config,
 	defaultNamespace string) (platform.Platform, error) {
 
 	var newPlatform platform.Platform
@@ -47,20 +41,13 @@ func CreatePlatform(parentLogger logger.Logger,
 		newPlatform, err = local.NewPlatform(parentLogger, platformConfiguration)
 
 	case "kube":
-		containerBuilderConfiguration := getContainerBuilderConfiguration(platformConfiguration)
-		newPlatform, err = kube.NewPlatform(parentLogger,
-			getKubeconfigPath(platformConfiguration),
-			containerBuilderConfiguration,
-			platformConfiguration)
+		newPlatform, err = kube.NewPlatform(parentLogger, platformConfiguration)
 
 	case "auto":
 
-		// try to get kubeconfig path
-		kubeconfigPath := getKubeconfigPath(platformConfiguration)
+		if platformConfiguration.KubeconfigPath != "" || kube.IsInCluster() {
 
-		if kubeconfigPath != "" || kube.IsInCluster() {
-
-			// call again, but force kube
+			// call again, force kube
 			newPlatform, err = CreatePlatform(parentLogger, "kube", platformConfiguration, defaultNamespace)
 		} else {
 
@@ -123,90 +110,4 @@ func ensureDefaultProjectExistence(parentLogger logger.Logger, p platform.Platfo
 	}
 
 	return nil
-}
-
-func getContainerBuilderConfiguration(platformConfiguration interface{}) *containerimagebuilderpusher.ContainerBuilderConfiguration {
-	containerBuilderConfiguration := containerimagebuilderpusher.ContainerBuilderConfiguration{}
-
-	// it might not be a kube configuration
-	if _, ok := platformConfiguration.(*config.Configuration); ok {
-		containerBuilderConfiguration = platformConfiguration.(*config.Configuration).ContainerBuilderConfiguration
-	}
-
-	// if some of the parameters are undefined, try environment variables
-	if containerBuilderConfiguration.Kind == "" {
-		containerBuilderConfiguration.Kind = common.GetEnvOrDefaultString("NUCLIO_CONTAINER_BUILDER_KIND",
-			"docker")
-	}
-	if containerBuilderConfiguration.BusyBoxImage == "" {
-		containerBuilderConfiguration.BusyBoxImage = common.GetEnvOrDefaultString("NUCLIO_BUSYBOX_CONTAINER_IMAGE",
-			"busybox:1.31")
-	}
-	if containerBuilderConfiguration.KanikoImage == "" {
-		containerBuilderConfiguration.KanikoImage = common.GetEnvOrDefaultString("NUCLIO_KANIKO_CONTAINER_IMAGE",
-			"gcr.io/kaniko-project/executor:v0.17.1")
-	}
-	if containerBuilderConfiguration.KanikoImagePullPolicy == "" {
-		containerBuilderConfiguration.KanikoImagePullPolicy = common.GetEnvOrDefaultString(
-			"NUCLIO_KANIKO_CONTAINER_IMAGE_PULL_POLICY", "IfNotPresent")
-	}
-	if containerBuilderConfiguration.JobPrefix == "" {
-		containerBuilderConfiguration.JobPrefix = common.GetEnvOrDefaultString("NUCLIO_DASHBOARD_JOB_NAME_PREFIX",
-			"kanikojob")
-	}
-
-	containerBuilderConfiguration.InsecurePushRegistry =
-		common.GetEnvOrDefaultBool("NUCLIO_KANIKO_INSECURE_PUSH_REGISTRY", false)
-	containerBuilderConfiguration.InsecurePullRegistry =
-		common.GetEnvOrDefaultBool("NUCLIO_KANIKO_INSECURE_PULL_REGISTRY", false)
-
-	containerBuilderConfiguration.DefaultRegistryCredentialsSecretName =
-		common.GetEnvOrDefaultString("NUCLIO_REGISTRY_CREDENTIALS_SECRET_NAME", "")
-
-	if containerBuilderConfiguration.DefaultBaseRegistryURL == "" {
-		containerBuilderConfiguration.DefaultBaseRegistryURL =
-			common.GetEnvOrDefaultString("NUCLIO_DASHBOARD_DEFAULT_BASE_REGISTRY_URL", "")
-	}
-
-	if containerBuilderConfiguration.DefaultOnbuildRegistryURL == "" {
-		containerBuilderConfiguration.DefaultOnbuildRegistryURL =
-			common.GetEnvOrDefaultString("NUCLIO_DASHBOARD_DEFAULT_ONBUILD_REGISTRY_URL", "quay.io")
-	}
-
-	containerBuilderConfiguration.CacheRepo =
-		common.GetEnvOrDefaultString("NUCLIO_DASHBOARD_KANIKO_CACHE_REPO", "")
-
-	return &containerBuilderConfiguration
-}
-
-func getKubeconfigPath(platformConfiguration interface{}) string {
-	var kubeconfigPath string
-
-	// it might not be a kube configuration
-	if _, ok := platformConfiguration.(*config.Configuration); ok {
-		kubeconfigPath = platformConfiguration.(*config.Configuration).KubeconfigPath
-	}
-
-	// do we still not have a kubeconfig path?
-	if kubeconfigPath == "" {
-		kubeconfigPath = common.GetEnvOrDefaultString("KUBECONFIG", getKubeconfigFromHomeDir())
-	}
-	return kubeconfigPath
-}
-
-func getKubeconfigFromHomeDir() string {
-	homeDir, err := homedir.Dir()
-	if err != nil {
-		return ""
-	}
-
-	homeKubeConfigPath := filepath.Join(homeDir, ".kube", "config")
-
-	// if the file exists @ home, use it
-	_, err = os.Stat(homeKubeConfigPath)
-	if err == nil {
-		return homeKubeConfigPath
-	}
-
-	return ""
 }

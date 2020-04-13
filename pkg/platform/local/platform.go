@@ -35,6 +35,7 @@ import (
 	"github.com/nuclio/nuclio/pkg/functionconfig"
 	"github.com/nuclio/nuclio/pkg/platform"
 	"github.com/nuclio/nuclio/pkg/platform/abstract"
+	"github.com/nuclio/nuclio/pkg/platformconfig"
 	"github.com/nuclio/nuclio/pkg/processor"
 	"github.com/nuclio/nuclio/pkg/processor/config"
 
@@ -58,7 +59,7 @@ type Platform struct {
 const Mib = 1048576
 
 // NewPlatform instantiates a new local platform
-func NewPlatform(parentLogger logger.Logger, platformConfiguration interface{}) (*Platform, error) {
+func NewPlatform(parentLogger logger.Logger, platformConfiguration *platformconfig.Config) (*Platform, error) {
 	newPlatform := &Platform{}
 
 	// create base
@@ -80,10 +81,11 @@ func NewPlatform(parentLogger logger.Logger, platformConfiguration interface{}) 
 		return nil, errors.Wrap(err, "Failed to create command runner")
 	}
 
-	if newPlatform.ContainerBuilder, err = containerimagebuilderpusher.NewDocker(newPlatform.Logger,
-		&containerimagebuilderpusher.ContainerBuilderConfiguration{}); err != nil {
-
-		return nil, errors.Wrap(err, "Failed to create containerimagebuilderpusher")
+	// create docker as container image builder
+	newPlatform.ContainerBuilder, err = containerimagebuilderpusher.NewDocker(newPlatform.Logger,
+		&newPlatform.Config.ContainerBuilderPusherConfigs)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to create docker builder")
 	}
 
 	// create a docker client

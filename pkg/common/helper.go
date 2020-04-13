@@ -31,6 +31,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/mitchellh/go-homedir"
 	"github.com/nuclio/errors"
 )
 
@@ -303,4 +304,25 @@ func GetSourceDir() string {
 			return dirName
 		}
 	}
+}
+
+func GetKubeconfigPath() string {
+	return GetEnvOrDefaultString("KUBECONFIG", GetKubeconfigFromHomeDir())
+}
+
+func GetKubeconfigFromHomeDir() string {
+	homeDir, err := homedir.Dir()
+	if err != nil {
+		return ""
+	}
+
+	homeKubeConfigPath := filepath.Join(homeDir, ".kube", "config")
+
+	// if the file exists @ home, use it
+	_, err = os.Stat(homeKubeConfigPath)
+	if err == nil {
+		return homeKubeConfigPath
+	}
+
+	return ""
 }

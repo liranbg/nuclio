@@ -29,7 +29,8 @@ type Kaniko struct {
 	jobNameRegex         *regexp.Regexp
 }
 
-func NewKaniko(logger logger.Logger, kubeClientSet kubernetes.Interface,
+func NewKaniko(logger logger.Logger,
+	kubeClientSet kubernetes.Interface,
 	builderConfiguration *ContainerBuilderConfiguration) (*Kaniko, error) {
 
 	if builderConfiguration == nil {

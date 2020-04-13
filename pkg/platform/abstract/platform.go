@@ -51,7 +51,7 @@ type Platform struct {
 	Logger                         logger.Logger
 	platform                       platform.Platform
 	invoker                        *invoker
-	Config                         interface{}
+	Config                         *platformconfig.Config
 	ExternalIPAddresses            []string
 	DeployLogStreams               *sync.Map
 	ContainerBuilder               containerimagebuilderpusher.BuilderPusher
@@ -59,7 +59,9 @@ type Platform struct {
 	ImageNamePrefixTemplate        string
 }
 
-func NewPlatform(parentLogger logger.Logger, platform platform.Platform, platformConfiguration interface{}) (*Platform, error) {
+func NewPlatform(parentLogger logger.Logger,
+	platform platform.Platform,
+	platformConfiguration *platformconfig.Config) (*Platform, error) {
 	var err error
 
 	newPlatform := &Platform{

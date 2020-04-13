@@ -17,6 +17,7 @@ limitations under the License.
 package platformconfig
 
 import (
+	"github.com/nuclio/nuclio/pkg/containerimagebuilderpusher"
 	"github.com/nuclio/nuclio/pkg/functionconfig"
 
 	"github.com/nuclio/errors"
@@ -31,6 +32,9 @@ type Config struct {
 	ScaleToZero              ScaleToZero              `json:"scaleToZero,omitempty"`
 	AutoScale                AutoScale                `json:"autoScale,omitempty"`
 	FunctionAugmentedConfigs []LabelSelectorAndConfig `json:"functionAugmentedConfigs,omitempty"`
+	KubeconfigPath           string                   `json:"kubeconfig_path,omitempty"`
+
+	ContainerBuilderPusherConfigs containerimagebuilderpusher.ContainerBuilderConfiguration `json:"container_builder_pusher_configs,omitempty"`
 }
 
 func (config *Config) GetSystemLoggerSinks() (map[string]LoggerSinkWithLevel, error) {

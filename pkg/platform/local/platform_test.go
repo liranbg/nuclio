@@ -25,6 +25,7 @@ import (
 	"github.com/nuclio/nuclio/pkg/dockerclient"
 	"github.com/nuclio/nuclio/pkg/functionconfig"
 	"github.com/nuclio/nuclio/pkg/platform"
+	"github.com/nuclio/nuclio/pkg/platformconfig"
 	"github.com/nuclio/nuclio/pkg/version"
 
 	"github.com/nuclio/logger"
@@ -65,7 +66,7 @@ func (suite *TestSuite) SetupSuite() {
 	suite.DockerClient, err = dockerclient.NewShellClient(suite.Logger, nil)
 	suite.Require().NoError(err, "Docker client should create successfully")
 
-	suite.Platform, err = NewPlatform(suite.Logger, nil)
+	suite.Platform, err = NewPlatform(suite.Logger, &platformconfig.Config{})
 	suite.Require().NoError(err, "Platform should create successfully")
 }
 

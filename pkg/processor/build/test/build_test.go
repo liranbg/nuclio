@@ -30,8 +30,9 @@ import (
 	"github.com/nuclio/nuclio/pkg/functionconfig"
 	"github.com/nuclio/nuclio/pkg/platform"
 	"github.com/nuclio/nuclio/pkg/platform/abstract"
+	"github.com/nuclio/nuclio/pkg/platform/factory"
 	"github.com/nuclio/nuclio/pkg/platform/kube"
-	"github.com/nuclio/nuclio/pkg/platform/local"
+	"github.com/nuclio/nuclio/pkg/platformconfig"
 	"github.com/nuclio/nuclio/pkg/processor/build"
 	"github.com/nuclio/nuclio/pkg/processor/build/runtime"
 	"github.com/nuclio/nuclio/pkg/processor/trigger/http/test/suite"
@@ -597,8 +598,8 @@ func (suite *testSuite) TestBuildFuncFromLocalArchiveRedeployUsesSameImage() {
 }
 
 func (suite *testSuite) TestGenerateProcessorDockerfile() {
-
-	newPlatform, err := local.NewPlatform(suite.Logger, nil)
+	platformConfig := platformconfig.Config{}
+	newPlatform, err := factory.CreatePlatform(suite.Logger, "local", &platformConfig, "default")
 	if err != nil {
 		suite.Fail("Instantiating Platform failed:", err)
 	}

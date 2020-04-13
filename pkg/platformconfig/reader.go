@@ -21,6 +21,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/nuclio/nuclio/pkg/containerimagebuilderpusher"
+
 	"github.com/ghodss/yaml"
 	"github.com/nuclio/errors"
 )
@@ -83,5 +85,6 @@ func (r *Reader) GetDefaultConfiguration() *Config {
 				{Level: "debug", Sink: "stdout"},
 			},
 		},
+		ContainerBuilderPusherConfigs: *containerimagebuilderpusher.NewContainerBuilderConfiguration(),
 	}
 }

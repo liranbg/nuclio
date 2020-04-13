@@ -1,6 +1,9 @@
 package containerimagebuilderpusher
 
-import "github.com/nuclio/nuclio/pkg/processor/build/runtime"
+import (
+	"github.com/nuclio/nuclio/pkg/common"
+	"github.com/nuclio/nuclio/pkg/processor/build/runtime"
+)
 
 // BuildOptions are options for building a container image
 type BuildOptions struct {
@@ -29,4 +32,31 @@ type ContainerBuilderConfiguration struct {
 	CacheRepo                            string
 	InsecurePushRegistry                 bool
 	InsecurePullRegistry                 bool
+}
+
+func NewContainerBuilderConfiguration() *ContainerBuilderConfiguration {
+	return &ContainerBuilderConfiguration{
+		Kind: common.GetEnvOrDefaultString("NUCLIO_CONTAINER_BUILDER_KIND",
+			"docker"),
+		BusyBoxImage: common.GetEnvOrDefaultString("NUCLIO_BUSYBOX_CONTAINER_IMAGE",
+			"busybox:1.31"),
+		KanikoImage: common.GetEnvOrDefaultString("NUCLIO_KANIKO_CONTAINER_IMAGE",
+			"gcr.io/kaniko-project/executor:v0.17.1"),
+		KanikoImagePullPolicy: common.GetEnvOrDefaultString(
+			"NUCLIO_KANIKO_CONTAINER_IMAGE_PULL_POLICY", "IfNotPresent"),
+		JobPrefix: common.GetEnvOrDefaultString("NUCLIO_DASHBOARD_JOB_NAME_PREFIX",
+			"kanikojob"),
+		InsecurePullRegistry: common.GetEnvOrDefaultBool("NUCLIO_KANIKO_INSECURE_PULL_REGISTRY",
+			false),
+		InsecurePushRegistry: common.GetEnvOrDefaultBool("NUCLIO_KANIKO_INSECURE_PUSH_REGISTRY",
+			false),
+		DefaultBaseRegistryURL: common.GetEnvOrDefaultString("NUCLIO_DASHBOARD_DEFAULT_BASE_REGISTRY_URL",
+			""),
+		DefaultOnbuildRegistryURL: common.GetEnvOrDefaultString("NUCLIO_DASHBOARD_DEFAULT_ONBUILD_REGISTRY_URL",
+			"quay.io"),
+		DefaultRegistryCredentialsSecretName: common.GetEnvOrDefaultString("NUCLIO_REGISTRY_CREDENTIALS_SECRET_NAME",
+			""),
+		CacheRepo: common.GetEnvOrDefaultString("NUCLIO_DASHBOARD_KANIKO_CACHE_REPO",
+			""),
+	}
 }

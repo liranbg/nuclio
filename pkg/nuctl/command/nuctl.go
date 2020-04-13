@@ -20,10 +20,10 @@ import (
 	"os"
 
 	"github.com/nuclio/nuclio/pkg/common"
+	"github.com/nuclio/nuclio/pkg/containerimagebuilderpusher"
 	"github.com/nuclio/nuclio/pkg/platform"
-	"github.com/nuclio/nuclio/pkg/platform/config"
 	"github.com/nuclio/nuclio/pkg/platform/factory"
-	"github.com/nuclio/nuclio/pkg/platform/kube"
+	"github.com/nuclio/nuclio/pkg/platformconfig"
 
 	"github.com/nuclio/errors"
 	"github.com/nuclio/logger"
@@ -42,10 +42,7 @@ type RootCommandeer struct {
 	platform              platform.Platform
 	namespace             string
 	verbose               bool
-	platformConfiguration interface{}
-
-	// platform-specific configurations
-	kubeConfiguration config.Configuration
+	platformConfiguration *platformconfig.Config
 }
 
 func NewRootCommandeer() *RootCommandeer {
@@ -66,11 +63,13 @@ func NewRootCommandeer() *RootCommandeer {
 	cmd.PersistentFlags().StringVarP(&commandeer.namespace, "namespace", "n", defaultNamespace, "Namespace")
 
 	// platform specific
-	cmd.PersistentFlags().StringVarP(&commandeer.kubeConfiguration.KubeconfigPath,
+	cmd.PersistentFlags().StringVarP(&commandeer.platformConfiguration.KubeconfigPath,
 		"kubeconfig",
 		"k",
-		commandeer.kubeConfiguration.KubeconfigPath,
+		commandeer.platformConfiguration.KubeconfigPath,
 		"Path to a Kubernetes configuration file (admin.conf)")
+
+	commandeer.platformConfiguration.ContainerBuilderPusherConfigs = *containerimagebuilderpusher.NewContainerBuilderConfiguration()
 
 	// add children
 	cmd.AddCommand(
@@ -147,15 +146,5 @@ func (rc *RootCommandeer) createLogger() (logger.Logger, error) {
 func (rc *RootCommandeer) createPlatform(logger logger.Logger) (platform.Platform, error) {
 
 	// ask the factory to create the appropriate platform
-	// TODO: as more platforms are supported, i imagine the last argument will be to some
-	// sort of configuration provider interface
-	platformInstance, err := factory.CreatePlatform(logger, rc.platformName, &rc.kubeConfiguration, rc.namespace)
-
-	// set platform specific common
-	switch platformInstance.(type) {
-	case *kube.Platform:
-		rc.platformConfiguration = &rc.kubeConfiguration
-	}
-
-	return platformInstance, err
+	return factory.CreatePlatform(logger, rc.platformName, rc.platformConfiguration, rc.namespace)
 }

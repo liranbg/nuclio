@@ -24,11 +24,11 @@ import (
 	"os"
 	"strings"
 
+	"github.com/nuclio/nuclio/pkg/common"
 	"github.com/nuclio/nuclio/pkg/containerimagebuilderpusher"
 	"github.com/nuclio/nuclio/pkg/functionconfig"
 	"github.com/nuclio/nuclio/pkg/platform"
 	"github.com/nuclio/nuclio/pkg/platform/abstract"
-	"github.com/nuclio/nuclio/pkg/platform/config"
 	nuclioio "github.com/nuclio/nuclio/pkg/platform/kube/apis/nuclio.io/v1beta1"
 	"github.com/nuclio/nuclio/pkg/platformconfig"
 
@@ -53,11 +53,12 @@ type Platform struct {
 const Mib = 1048576
 
 // NewPlatform instantiates a new kubernetes platform
-func NewPlatform(parentLogger logger.Logger,
-	kubeconfigPath string,
-	containerBuilderConfiguration *containerimagebuilderpusher.ContainerBuilderConfiguration,
-	platformConfiguration interface{}) (*Platform, error) {
+func NewPlatform(parentLogger logger.Logger, platformConfiguration *platformconfig.Config) (*Platform, error) {
 	newPlatform := &Platform{}
+
+	if platformConfiguration.KubeconfigPath == "" {
+		platformConfiguration.KubeconfigPath = common.GetKubeconfigPath()
+	}
 
 	// create base
 	newAbstractPlatform, err := abstract.NewPlatform(parentLogger, newPlatform, platformConfiguration)
@@ -67,10 +68,10 @@ func NewPlatform(parentLogger logger.Logger,
 
 	// init platform
 	newPlatform.Platform = newAbstractPlatform
-	newPlatform.kubeconfigPath = kubeconfigPath
+	newPlatform.kubeconfigPath = platformConfiguration.KubeconfigPath
 
 	// create consumer
-	newPlatform.consumer, err = newConsumer(newPlatform.Logger, kubeconfigPath)
+	newPlatform.consumer, err = newConsumer(newPlatform.Logger, newPlatform.kubeconfigPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to create consumer")
 	}
@@ -100,22 +101,26 @@ func NewPlatform(parentLogger logger.Logger,
 	}
 
 	// create container builder
-	if containerBuilderConfiguration != nil && containerBuilderConfiguration.Kind == "kaniko" {
-		newPlatform.ContainerBuilder, err = containerimagebuilderpusher.NewKaniko(newPlatform.Logger,
-			newPlatform.consumer.kubeClientSet, containerBuilderConfiguration)
-		if err != nil {
+	if newPlatform.Config.ContainerBuilderPusherConfigs.Kind == "kaniko" {
+		if newPlatform.ContainerBuilder, err = containerimagebuilderpusher.NewKaniko(newPlatform.Logger,
+			newPlatform.consumer.kubeClientSet,
+			&newPlatform.Config.ContainerBuilderPusherConfigs); err != nil {
 			return nil, errors.Wrap(err, "Failed to create kaniko builder")
 		}
 	} else {
 
 		// Default container image builder
-		newPlatform.ContainerBuilder, err = containerimagebuilderpusher.NewDocker(newPlatform.Logger, containerBuilderConfiguration)
-		if err != nil {
+		if newPlatform.ContainerBuilder, err = containerimagebuilderpusher.NewDocker(newPlatform.Logger,
+			&newPlatform.Config.ContainerBuilderPusherConfigs); err != nil {
 			return nil, errors.Wrap(err, "Failed to create docker builder")
 		}
 	}
 
 	return newPlatform, nil
+}
+
+func IsInCluster() bool {
+	return len(os.Getenv("KUBERNETES_SERVICE_HOST")) != 0 && len(os.Getenv("KUBERNETES_SERVICE_PORT")) != 0
 }
 
 // Deploy will deploy a processor image to the platform (optionally building it, if source is provided)
@@ -269,10 +274,6 @@ func (p *Platform) UpdateFunction(updateFunctionOptions *platform.UpdateFunction
 // DeleteFunction will delete a previously deployed function
 func (p *Platform) DeleteFunction(deleteFunctionOptions *platform.DeleteFunctionOptions) error {
 	return p.deleter.delete(p.consumer, deleteFunctionOptions)
-}
-
-func IsInCluster() bool {
-	return len(os.Getenv("KUBERNETES_SERVICE_HOST")) != 0 && len(os.Getenv("KUBERNETES_SERVICE_PORT")) != 0
 }
 
 // GetName returns the platform name
@@ -651,19 +652,7 @@ func (p *Platform) GetDefaultInvokeIPAddresses() ([]string, error) {
 }
 
 func (p *Platform) GetScaleToZeroConfiguration() (*platformconfig.ScaleToZero, error) {
-	switch configType := p.Config.(type) {
-	case *platformconfig.Config:
-		return &configType.ScaleToZero, nil
-
-	// FIXME: When deploying using nuctl in a kubernetes environment, it will be a kube platform, but the configuration
-	// will be of type *config.Configuration which has no scale to zero configuration
-	// we need to fix the platform config (p.Config) to always be of the same type (*platformconfig.Config) and not
-	// passing interface{} everywhere
-	case *config.Configuration:
-		return nil, nil
-	default:
-		return nil, errors.New("Not a valid configuration instance")
-	}
+	return &p.Config.ScaleToZero, nil
 }
 
 func (p *Platform) clearCallStack(message string) string {
