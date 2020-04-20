@@ -142,20 +142,9 @@ jobs:
 
       - name: Helm install nuclio
         run: |
-          cat << EOF | helm install --debug --wait --namespace ${NAMESPACE} -f - nuclio hack/k8s/helm/nuclio/
-          controller:
-            image:
-              tag: ${NUCLIO_LABEL}-amd64
-              repository: ${REPO}/${REPO_OWNER}/controller
-              pullPolicy: Never
-          dashboard:
-            image:
-              tag: ${NUCLIO_LABEL}-amd64
-              repository: ${REPO}/${REPO_OWNER}/dashboard
-              pullPolicy: Never
-          registry:
-            defaultOnbuildRegistryURL: ${REPO}/${REPO_OWNER}
-          EOF
+          cat test/k8s/ci_assets/helm_values.yaml
+            | envsubst
+            | helm install --debug --wait --namespace ${NAMESPACE} -f - nuclio hack/k8s/helm/nuclio/
 
       - name: Deploy function
         run: |

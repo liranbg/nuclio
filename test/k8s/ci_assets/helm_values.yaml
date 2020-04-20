@@ -1,0 +1,12 @@
+controller:
+  image:
+    tag: ${NUCLIO_LABEL}-amd64
+    repository: ${REPO}/${REPO_OWNER}/controller
+    pullPolicy: Never
+dashboard:
+  image:
+    tag: ${NUCLIO_LABEL}-amd64
+    repository: ${REPO}/${REPO_OWNER}/dashboard
+    pullPolicy: Never
+registry:
+  defaultOnbuildRegistryURL: ${REPO}/${REPO_OWNER}
