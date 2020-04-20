@@ -85,7 +85,7 @@ jobs:
 
       - name: Build
         run: |
-          make controller dashboard handler-builder-golang-onbuild
+          make build
         env:
           NUCLIO_DOCKER_REPO: ${{ env.REPO }}/${{ env.REPO_OWNER }}
 
@@ -103,8 +103,8 @@ jobs:
           name: nuclio-docker-images
           path: nuclio_docker_images.tar.gz
 
-  nuctl_deploy_invoke:
-    name: Deploy and invoke function using nuctl
+  test_nuctl_deploy_invoke:
+    name: Test deploy and invoke function using nuctl
     runs-on: ubuntu-latest
     needs:
       - build_docker_images
@@ -119,7 +119,7 @@ jobs:
 
       - uses: manusa/actions-setup-minikube@v1.0.1
         with:
-          minikube version: 'v1.9.0'
+          minikube version: 'v1.9.2'
           kubernetes version: 'v1.17.3'
           github token: ${{ github.token }}
 
