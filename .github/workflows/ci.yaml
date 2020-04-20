@@ -142,8 +142,8 @@ jobs:
 
       - name: Helm install nuclio
         run: |
-          cat test/k8s/ci_assets/helm_values.yaml
-            | envsubst
+          cat test/k8s/ci_assets/helm_values.yaml \
+            | envsubst \
             | helm install --debug --wait --namespace ${NAMESPACE} -f - nuclio hack/k8s/helm/nuclio/
 
       - name: Deploy function
