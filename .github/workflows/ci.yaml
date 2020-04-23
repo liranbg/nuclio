@@ -157,7 +157,7 @@ jobs:
             --namespace ${NAMESPACE} \
             --no-pull
         env:
-          NUCLIO_DASHBOARD_DEFAULT_ONBUILD_REGISTRY_URL: ${{ env.REPO }}/${{ env.REPO_NAME }}
+          NUCLIO_DASHBOARD_DEFAULT_ONBUILD_REGISTRY_URL: ${{ env.REPO }}
 
       - name: Invoke function
         run: |
