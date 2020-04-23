@@ -7,7 +7,7 @@ on:
 
 env:
   REPO: quay.io
-  REPO_OWNER: ${{ github.event.repository.owner.login }}
+  REPO_NAME: nuclio
   NUCLIO_LABEL: ${{ github.sha }}
   FUNCTION_NAME: test-function
   NAMESPACE: nuclio
@@ -87,14 +87,14 @@ jobs:
         run: |
           make controller dashboard handler-builder-golang-onbuild
         env:
-          NUCLIO_DOCKER_REPO: ${{ env.REPO }}/${{ env.REPO_OWNER }}
+          NUCLIO_DOCKER_REPO: ${{ env.REPO }}/${{ env.REPO_NAME }}
 
       - name: Save
         run: |
           docker save \
-            ${REPO}/${REPO_OWNER}/dashboard:${NUCLIO_LABEL}-amd64 \
-            ${REPO}/${REPO_OWNER}/controller:${NUCLIO_LABEL}-amd64 \
-            ${REPO}/${REPO_OWNER}/handler-builder-golang-onbuild:${NUCLIO_LABEL}-amd64-alpine \
+            ${REPO}/${REPO_NAME}/dashboard:${NUCLIO_LABEL}-amd64 \
+            ${REPO}/${REPO_NAME}/controller:${NUCLIO_LABEL}-amd64 \
+            ${REPO}/${REPO_NAME}/handler-builder-golang-onbuild:${NUCLIO_LABEL}-amd64-alpine \
             | gzip > nuclio_docker_images.tar.gz
 
       - name: Upload
@@ -157,7 +157,7 @@ jobs:
             --namespace ${NAMESPACE} \
             --no-pull
         env:
-          NUCLIO_DASHBOARD_DEFAULT_ONBUILD_REGISTRY_URL: ${{ env.REPO }}/${{ env.REPO_OWNER }}
+          NUCLIO_DASHBOARD_DEFAULT_ONBUILD_REGISTRY_URL: ${{ env.REPO }}/${{ env.REPO_NAME }}
 
       - name: Invoke function
         run: |
