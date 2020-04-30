@@ -1,6 +1,8 @@
 name: Monitor issued comments
 
-on: issue_comment
+on:
+  issue_comment:
+    types: [created, edited]
 
 jobs:
   run_ci_integ_comment:
@@ -18,4 +20,8 @@ jobs:
           permission-level: write
 
       # will get here of above expectations met
-      - run: make build test
+      - uses: actions/checkout@v2
+      - run: |
+          git fetch origin +refs/pull/${{ github.event.issue.number }}/merge
+          git checkout FETCH_HEAD
+          make build test
