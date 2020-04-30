@@ -19,9 +19,9 @@ jobs:
 
       # will get here of above expectations met
       - uses: actions/checkout@v2
+        with:
+          ref: refs/pull/${{ github.event.issue.number }}/merge
       - run: |
-          git fetch origin +refs/pull/${{ github.event.issue.number }}/merge
-          git checkout FETCH_HEAD
           make build test
         env:
           NUCLIO_NUCTL_CREATE_SYMLINK: false
