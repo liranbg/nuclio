@@ -25,3 +25,4 @@ jobs:
           git fetch origin +refs/pull/${{ github.event.issue.number }}/merge
           git checkout FETCH_HEAD
           make build test
+          echo "ok"
