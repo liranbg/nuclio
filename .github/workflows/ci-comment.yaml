@@ -1,0 +1,21 @@
+name: Monitor issued comments
+
+on: issue_comment
+
+jobs:
+  run_ci_integ_comment:
+    name: Monitor comments
+    runs-on: ubuntu-latest
+    steps:
+      - id: command_monitor
+        uses: xt0rted/slash-command-action@v1.1.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          command: test
+          reaction: "true"
+          reaction-type: "+1"
+          allow-edits: "true"
+          permission-level: admin
+
+      # will get here of above expectations met
+      - run: make build test
