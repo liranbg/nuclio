@@ -15,7 +15,7 @@ jobs:
           reaction: "true"
           reaction-type: "+1"
           allow-edits: "true"
-          permission-level: admin
+          permission-level: write
 
       # will get here of above expectations met
       - run: make build test
