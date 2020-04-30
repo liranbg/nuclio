@@ -217,7 +217,6 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 			return errors.Wrap(err, "Failed to get function")
 		}
 
-		// create or update the function if it exists. If functionInstance is nil, the function will be created
 		// with the configuration and status. if it exists, it will be updated with the configuration and status.
 		// the goal here is for the function to exist prior to building so that it is gettable
 		existingFunctionInstance, err = p.deployer.createOrUpdateFunction(existingFunctionInstance,
@@ -239,6 +238,14 @@ func (p *Platform) CreateFunction(createFunctionOptions *platform.CreateFunction
 	}
 
 	onAfterBuild := func(buildResult *platform.CreateFunctionBuildResult, buildErr error) (*platform.CreateFunctionResult, error) {
+
+		skipDeploy := functionconfig.ShouldSkipDeploy(createFunctionOptions.FunctionConfig.Meta.Annotations)
+
+		// after a function build (or skip-build) if the annotation FunctionAnnotationSkipBuild exists, it should be removed
+		// so next time, the build will happen. (skip-deploy will be removed on next update so the controller can use the
+		// annotation as well).
+		createFunctionOptions.FunctionConfig.Meta.RemoveSkipBuildAnnotation()
+
 		if buildErr != nil {
 
 			// try to report the error
