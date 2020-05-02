@@ -79,18 +79,13 @@ type BlastConfiguration struct {
 
 // SetupSuite is called for suite setup
 func (suite *TestSuite) SetupSuite() {
+	var err error
 	if suite.RuntimeDir == "" {
 		suite.RuntimeDir = suite.Runtime
 	}
 
 	// update version so that linker doesn't need to inject it
-	err := version.Set(&version.Info{
-		GitCommit: "c",
-		Label:     "latest",
-		Arch:      "amd64",
-		OS:        "linux",
-	})
-	suite.Require().NoError(err)
+	version.SetFromEnv()
 
 	suite.Logger, err = nucliozap.NewNuclioZapTest("test")
 	suite.Require().NoError(err)
