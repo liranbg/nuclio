@@ -104,21 +104,23 @@ func (suite *TestSuite) SetupTest() {
 
 // BlastHTTP is a stress test suite
 func (suite *TestSuite) BlastHTTP(configuration BlastConfiguration) {
+	var totalResults vegeta.Metrics
 
 	// get createFunctionOptions from given blastConfiguration
 	createFunctionOptions, err := suite.blastConfigurationToDeployOptions(&configuration)
 	suite.Require().NoError(err)
 
 	// deploy the function
-	_, err = suite.Platform.CreateFunction(createFunctionOptions)
-	suite.Require().NoError(err)
+	suite.deployFunction(createFunctionOptions, func(deployResult *platform.CreateFunctionResult) bool {
 
-	// blast the function
-	totalResults, err := suite.blastFunction(&configuration)
-	suite.Require().NoError(err)
+		// blast the function
+		totalResults, err = suite.blastFunction(&configuration)
+		suite.Require().NoError(err)
+		return true
+	}, false)
 
 	// delete the function
-	if os.Getenv("NUCLIO_TEST_KEEP_DOCKER") == "" {
+	if os.Getenv(keepDockerEnvKey) == "" {
 		err = suite.Platform.DeleteFunction(&platform.DeleteFunctionOptions{
 			FunctionConfig: createFunctionOptions.FunctionConfig,
 		})
@@ -347,16 +349,28 @@ func (suite *TestSuite) deployFunctionPopulateMissingFields(createFunctionOption
 	onAfterContainerRun OnAfterContainerRun,
 	expectFailure bool) *platform.CreateFunctionResult {
 
+	var deployResult *platform.CreateFunctionResult
+
 	// add some commonly used options to createFunctionOptions
 	suite.PopulateDeployOptions(createFunctionOptions)
 
 	// delete the function when done
-	defer suite.Platform.DeleteFunction(&platform.DeleteFunctionOptions{ // nolint: errcheck
-		FunctionConfig: createFunctionOptions.FunctionConfig,
-	})
+	defer func() {
 
-	deployResult := suite.deployFunction(createFunctionOptions, onAfterContainerRun, expectFailure)
+		// if we didnt deploy yet, try remove what is created
+		if deployResult == nil {
+			suite.Platform.DeleteFunction(&platform.DeleteFunctionOptions{ // nolint: errcheck
+				FunctionConfig: createFunctionOptions.FunctionConfig,
+			})
+		} else {
 
+			// if we did deploy, remove what was deployed
+			suite.Platform.DeleteFunction(&platform.DeleteFunctionOptions{ // nolint: errcheck
+				FunctionConfig: deployResult.UpdatedFunctionConfig,
+			})
+		}
+	}()
+	deployResult = suite.deployFunction(createFunctionOptions, onAfterContainerRun, expectFailure)
 	return deployResult
 }
 
