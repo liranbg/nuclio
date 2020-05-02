@@ -174,3 +174,30 @@ jobs:
           name: Nuctl tests results
           path: nuctl-test-results-${{ env.NUCLIO_LABEL }}.log
         if: ${{ always() }}
+
+  test_integration:
+    name: Test Integration
+    runs-on: ubuntu-latest
+    needs:
+      - build_docker_images
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Fetch nuclio docker images
+        uses: actions/download-artifact@v1
+        with:
+          name: nuclio-docker-images
+
+      - name: Prepare
+        run: |
+          docker system prune --all --force
+          docker load -i nuclio-docker-images/nuclio_docker_images.tar.gz
+
+      - name: Run test
+        run: |
+          rm -f results.log && make test | tee results.log
+
+      - uses: actions/upload-artifact@v1
+        with:
+          name: Integration test results
+          path: results.log
