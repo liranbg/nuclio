@@ -424,6 +424,17 @@ build-base: build-builder
 		--file hack/docker/build/base-alpine/Dockerfile \
 		--tag nuclio-base-alpine:$(NUCLIO_LABEL) .
 
+.PHONY: build-base
+build-base: build-builder
+	docker build \
+		--build-arg NUCLIO_LABEL=$(NUCLIO_LABEL) \
+		--file hack/docker/build/base/Dockerfile \
+		--tag nuclio-base:$(NUCLIO_LABEL) .
+	docker build \
+		--build-arg NUCLIO_LABEL=$(NUCLIO_LABEL) \
+		--file hack/docker/build/base-alpine/Dockerfile \
+		--tag nuclio-base-alpine:$(NUCLIO_LABEL) .
+
 .PHONY: build-builder
 build-builder:
 	docker build -f hack/docker/build/builder/Dockerfile -t nuclio-builder:$(NUCLIO_LABEL) .
