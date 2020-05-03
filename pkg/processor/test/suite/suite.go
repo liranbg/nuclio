@@ -35,6 +35,7 @@ import (
 	"github.com/rs/xid"
 	"github.com/stretchr/testify/suite"
 	"github.com/tsenart/vegeta/lib"
+	"github.com/valyala/fasthttp"
 )
 
 const (
@@ -112,6 +113,7 @@ func (suite *TestSuite) BlastHTTP(configuration BlastConfiguration) {
 
 	// deploy the function
 	suite.deployFunction(createFunctionOptions, func(deployResult *platform.CreateFunctionResult) bool {
+		configuration.URL = fmt.Sprintf("http://%s:%d", suite.GetTestHost(), deployResult.Port)
 
 		// blast the function
 		totalResults, err = suite.blastFunction(&configuration)
@@ -138,15 +140,16 @@ func (suite *TestSuite) BlastHTTP(configuration BlastConfiguration) {
 
 // NewBlastConfiguration populates BlastRequest struct with default values
 func (suite *TestSuite) NewBlastConfiguration() BlastConfiguration {
-
-	// Get test host
-	host := common.GetEnvOrDefaultString("NUCLIO_TEST_HOST", "localhost")
-
-	request := BlastConfiguration{Method: "GET", Workers: 32, RatePerWorker: 5,
-		Duration: 10 * time.Second, URL: fmt.Sprintf("http://%s:8080", host),
-		FunctionName: "outputter", FunctionPath: "outputter", TimeOut: time.Second * 600}
-
-	return request
+	return BlastConfiguration{
+		Method:        fasthttp.MethodGet,
+		Workers:       32,
+		RatePerWorker: 5,
+		Duration:      10 * time.Second,
+		URL:           suite.GetTestHost(),
+		FunctionName:  "outputter",
+		FunctionPath:  "outputter",
+		TimeOut:       600 * time.Second,
+	}
 }
 
 // TearDownTest is called after each test in the suite
@@ -300,18 +303,18 @@ func (suite *TestSuite) blastConfigurationToDeployOptions(request *BlastConfigur
 	createFunctionOptions := suite.GetDeployOptions(request.FunctionName,
 		suite.GetFunctionPath(request.FunctionPath))
 
-	// Configure deployOptipns properties, number of MaxWorkers like in the default stress request - 32
-	createFunctionOptions.FunctionConfig.Meta.Name = fmt.Sprintf("%s-%s", createFunctionOptions.FunctionConfig.Meta.Name, suite.TestID)
+	// Configure deployOptions properties, number of MaxWorkers like in the default stress request
+	createFunctionOptions.FunctionConfig.Meta.Name =
+		fmt.Sprintf("%s-%s",
+			createFunctionOptions.FunctionConfig.Meta.Name,
+			suite.TestID)
 	createFunctionOptions.FunctionConfig.Spec.Build.NoBaseImagesPull = true
-	defaultHTTPTriggerConfiguration := functionconfig.Trigger{
-		Kind:       "http",
-		MaxWorkers: 32,
-		URL:        ":8080",
-		Attributes: map[string]interface{}{
-			"port": 8080,
+	createFunctionOptions.FunctionConfig.Spec.Triggers = map[string]functionconfig.Trigger{
+		"httpTrigger": {
+			Kind:       "http",
+			MaxWorkers: request.Workers,
 		},
 	}
-	createFunctionOptions.FunctionConfig.Spec.Triggers = map[string]functionconfig.Trigger{"trigger": defaultHTTPTriggerConfiguration}
 	createFunctionOptions.FunctionConfig.Spec.Handler = request.Handler
 
 	return createFunctionOptions, nil
