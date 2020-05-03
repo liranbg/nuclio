@@ -28,7 +28,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type testSuite struct {
+type TestSuite struct {
 	*triggertest.AbstractBrokerSuite
 	broker        *sarama.Broker
 	producer      sarama.SyncProducer
@@ -38,8 +38,8 @@ type testSuite struct {
 	NumPartitions int32
 }
 
-func newTestSuite() *testSuite {
-	newTestSuite := &testSuite{
+func newTestSuite() *TestSuite {
+	newTestSuite := &TestSuite{
 		topic:         "myTopic",
 		consumerGroup: "myConsumerGroup",
 		initialOffset: "earliest",
@@ -51,7 +51,7 @@ func newTestSuite() *testSuite {
 	return newTestSuite
 }
 
-func (suite *testSuite) SetupSuite() {
+func (suite *TestSuite) SetupSuite() {
 	suite.AbstractBrokerSuite.SetupSuite()
 
 	suite.Logger.Info("Creating broker resources")
@@ -86,7 +86,7 @@ func (suite *testSuite) SetupSuite() {
 	suite.Require().NoError(err, "Failed to create sync producer")
 }
 
-func (suite *testSuite) TestReceiveRecords() {
+func (suite *TestSuite) TestReceiveRecords() {
 	createFunctionOptions := suite.GetDeployOptions("event_recorder", suite.FunctionPaths["python"])
 	createFunctionOptions.FunctionConfig.Spec.Triggers = map[string]functionconfig.Trigger{}
 	createFunctionOptions.FunctionConfig.Spec.Triggers["http"] = functionconfig.Trigger{
@@ -116,14 +116,14 @@ func (suite *testSuite) TestReceiveRecords() {
 }
 
 // GetContainerRunInfo returns information about the broker container
-func (suite *testSuite) GetContainerRunInfo() (string, *dockerclient.RunOptions) {
+func (suite *TestSuite) GetContainerRunInfo() (string, *dockerclient.RunOptions) {
 	return "spotify/kafka", &dockerclient.RunOptions{
 		Ports: map[int]int{2181: 2181, 9092: 9092},
 		Env:   map[string]string{"ADVERTISED_HOST": suite.BrokerHost, "ADVERTISED_PORT": "9092"},
 	}
 }
 
-func (suite *testSuite) publishMessageToTopic(topic string, body string) error {
+func (suite *TestSuite) publishMessageToTopic(topic string, body string) error {
 	producerMessage := sarama.ProducerMessage{
 		Topic: topic,
 		Key:   sarama.StringEncoder("key"),
