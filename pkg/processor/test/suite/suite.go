@@ -113,6 +113,10 @@ func (suite *TestSuite) BlastHTTP(configuration BlastConfiguration) {
 
 	// deploy the function
 	suite.deployFunction(createFunctionOptions, func(deployResult *platform.CreateFunctionResult) bool {
+
+		// give the container time to stabilize before we blast him
+		time.Sleep(5 * time.Second)
+
 		configuration.URL = fmt.Sprintf("http://%s:%d", suite.GetTestHost(), deployResult.Port)
 
 		// blast the function
