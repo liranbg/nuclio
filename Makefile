@@ -375,7 +375,11 @@ lint: modules
 
 .PHONY: test-undockerized
 test-undockerized: ensure-gopath
+ifneq ($(NUCLIO_TEST_UNDOCKERIZE_TIMEOUT),)
+	go test -v ./cmd/... ./pkg/... -p 1 -d $(NUCLIO_TEST_UNDOCKERIZE_TIMEOUT)
+else
 	go test -v ./cmd/... ./pkg/... -p 1
+endif
 
 .PHONY: test
 test: ensure-gopath build-base
@@ -397,6 +401,7 @@ test: ensure-gopath build-base
 		--env NUCLIO_LABEL=$(NUCLIO_LABEL) \
 		--env NUCLIO_ARCH=$(NUCLIO_ARCH) \
 		--env NUCLIO_OS=$(NUCLIO_OS) \
+		--env NUCLIO_TEST_UNDOCKERIZE_TIMEOUT=$(NUCLIO_TEST_UNDOCKERIZE_TIMEOUT) \
 		$(NUCLIO_DOCKER_TEST_TAG) \
 		/bin/bash -c "make test-undockerized"
 
