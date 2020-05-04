@@ -166,7 +166,7 @@ func (suite *functionDeployTestSuite) TestDeployFromFunctionConfig() {
 
 	err := suite.ExecuteNuctl([]string{"deploy", "", "--verbose", "--no-pull"},
 		map[string]string{
-			"path": path.Join(suite.GetFunctionsDir(), "common", "json-parser-with-function-config", "python"),
+			"path":      path.Join(suite.GetFunctionsDir(), "common", "json-parser-with-function-config", "python"),
 			"imageName": imageName,
 		})
 
@@ -469,9 +469,9 @@ func (suite *functionDeployTestSuite) TestDeployFromLocalDirPath() {
 
 	err := suite.ExecuteNuctl([]string{"deploy", functionName, "--verbose", "--no-pull"},
 		map[string]string{
-			"path":    path.Join(suite.GetFunctionsDir(), "common", "reverser", "python"),
-			"runtime": "python:3.6",
-			"handler": "reverser:handler",
+			"path":      path.Join(suite.GetFunctionsDir(), "common", "reverser", "python"),
+			"runtime":   "python:3.6",
+			"handler":   "reverser:handler",
 			"imageName": imageName,
 		})
 

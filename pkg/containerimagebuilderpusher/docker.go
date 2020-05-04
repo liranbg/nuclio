@@ -128,7 +128,7 @@ func (d *Docker) pushContainerImage(image string, registryURL string) error {
 
 func (d *Docker) saveContainerImage(buildOptions *BuildOptions) error {
 	if buildOptions.OutputImageFile != "" {
-		d.logger.InfoWith("Archiving built docker image","OutputImageFile", buildOptions.OutputImageFile)
+		d.logger.InfoWith("Archiving built docker image", "OutputImageFile", buildOptions.OutputImageFile)
 		return d.dockerClient.Save(buildOptions.Image, buildOptions.OutputImageFile)
 	}
 	return nil
