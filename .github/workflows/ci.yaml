@@ -163,4 +163,4 @@ jobs:
         run: make test-k8s-nuctl
         env:
           NUCLIO_DASHBOARD_DEFAULT_ONBUILD_REGISTRY_URL: ${{ env.REPO }}
-          NUCTL_BIN: ./nuctl
+          NUCTL_REGISTRY: "localhost:5000"
