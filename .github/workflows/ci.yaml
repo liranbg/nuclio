@@ -177,5 +177,5 @@ jobs:
       - uses: actions/upload-artifact@v1
         with:
           name: Nuctl tests results
-          path: nuctl-test-results-${{ NUCLIO_LABEL }}.log
+          path: nuctl-test-results-${{ env.NUCLIO_LABEL }}.log
         if: ${{ always() }}
