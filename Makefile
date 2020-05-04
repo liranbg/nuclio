@@ -406,7 +406,7 @@ test-short: modules ensure-gopath
 	go test -v ./cmd/... ./pkg/... -short
 
 # Helpers for test-k8s-nuctl
-NUCTL_EXTERNAL_IP_ADDRESSES := $(if $(NUCTL_EXTERNAL_IP_ADDRESSES),$(NUCTL_EXTERNAL_IP_ADDRESSES), "localhost")
+NUCTL_EXTERNAL_IP_ADDRESSES := $(if $(NUCTL_EXTERNAL_IP_ADDRESSES),$(NUCTL_EXTERNAL_IP_ADDRESSES),"localhost")
 NUCTL_BIN ?= $(GOPATH)/bin/$(NUCTL_BIN_NAME)
 
 .PHONY: test-nuctl
