@@ -411,7 +411,7 @@ NUCTL_BIN ?= $(GOPATH)/bin/$(NUCTL_BIN_NAME)
 
 .PHONY: test-nuctl
 test-nuctl:
-	go test -v github.com/nuclio/nuclio/pkg/nuctl/test/function_test -p 1
+	go test -v github.com/nuclio/nuclio/pkg/nuctl/test/... -p 1
 
 .PHONY: build-base
 build-base: build-builder
