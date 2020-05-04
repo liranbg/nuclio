@@ -130,6 +130,13 @@ jobs:
         with:
           version: 'v3.1.2'
 
+      - uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
       - uses: manusa/actions-setup-minikube@v1.0.2
         with:
           minikube version: 'v1.9.2'
@@ -160,7 +167,15 @@ jobs:
             | helm install --debug --wait --namespace ${NAMESPACE} -f - nuclio hack/k8s/helm/nuclio/
 
       - name: Run nuctl tests
-        run: make test-k8s-nuctl
+        run: |
+          set -o pipefail
+          rm -f results.log && make test-k8s-nuctl 2>&1 | tee nuctl-test-results-${NUCLIO_LABEL}.log
         env:
           NUCLIO_DASHBOARD_DEFAULT_ONBUILD_REGISTRY_URL: ${{ env.REPO }}
           NUCTL_REGISTRY: "localhost:5000"
+
+      - uses: actions/upload-artifact@v1
+        with:
+          name: Nuctl tests results
+          path: nuctl-test-results-${{ NUCLIO_LABEL }}.log
+        if: ${{ always() }}
