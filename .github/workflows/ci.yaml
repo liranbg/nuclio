@@ -195,7 +195,8 @@ jobs:
 
       - name: Run test
         run: |
-          rm -f results.log && make test | tee results.log
+          set -o pipefail
+          rm -f results.log && make test 2>&1 | tee results.log
         env:
           NUCLIO_TEST_UNDOCKERIZE_TIMEOUT: 20m
 
@@ -203,3 +204,4 @@ jobs:
         with:
           name: Integration test results
           path: results.log
+        if: ${{ always() }}
