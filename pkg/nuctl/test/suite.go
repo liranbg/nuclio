@@ -19,6 +19,7 @@ package test
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"path"
@@ -108,11 +109,7 @@ func (suite *Suite) ExecuteNuctl(positionalArgs []string,
 	argsStringSlice = append(argsStringSlice, positionalArgs...)
 
 	for argName, argValue := range namedArgs {
-		argsStringSlice = append(argsStringSlice, "--"+argName)
-
-		if argValue != "" {
-			argsStringSlice = append(argsStringSlice, argValue)
-		}
+		argsStringSlice = append(argsStringSlice, fmt.Sprintf("--%s", argName), argValue)
 	}
 
 	// override os.Args (this can't go wrong horribly, can it?)

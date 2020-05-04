@@ -412,22 +412,20 @@ func (suite *functionDeployTestSuite) TestDeployWithFunctionEvent() {
 	suite.Require().NoError(err)
 
 	// check to see we have created the function event
-	err = suite.ExecuteNuctl([]string{"get", "functionevent"}, nil)
+	err = common.RetryUntilSuccessful(1 * time.Minute, 5 * time.Second, func() bool {
+		return suite.ExecuteNuctl([]string{"get", "functionevent", functionEventName}, nil) == nil
+	})
 	suite.Require().NoError(err)
-
-	// find function event names in get result
-	suite.findPatternsInOutput([]string{functionEventName}, nil)
 
 	// delete the function
 	err = suite.ExecuteNuctl([]string{"delete", "fu", functionName}, nil)
 	suite.Require().NoError(err)
 
 	// check to see the function event was deleted as well
-	err = suite.ExecuteNuctl([]string{"get", "functionevent"}, nil)
+	err = common.RetryUntilSuccessful(1 * time.Minute, 5 * time.Second, func() bool {
+		return suite.ExecuteNuctl([]string{"get", "functionevent", functionEventName}, nil) != nil
+	})
 	suite.Require().NoError(err)
-
-	// make sure function event names is not in get result
-	suite.findPatternsInOutput(nil, []string{functionEventName})
 }
 
 func (suite *functionDeployTestSuite) TestBuildWithSaveDeployWithLoad() {
