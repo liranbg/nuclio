@@ -376,9 +376,16 @@ lint: modules
 .PHONY: test-undockerized
 test-undockerized: ensure-gopath
 ifneq ($(NUCLIO_TEST_UNDOCKERIZE_TIMEOUT),)
-	go test -v ./cmd/... ./pkg/... -p 1 -d $(NUCLIO_TEST_UNDOCKERIZE_TIMEOUT)
+	go test \
+		-v \
+		--parallel 1 \
+		--timeout $(NUCLIO_TEST_UNDOCKERIZE_TIMEOUT) \
+		./cmd/... ./pkg/...
 else
-	go test -v ./cmd/... ./pkg/... -p 1
+	go test \
+		-v \
+		--parallel 1 \
+		./cmd/... ./pkg/...
 endif
 
 .PHONY: test
