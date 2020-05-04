@@ -84,7 +84,7 @@ func (suite *Suite) SetupSuite() {
 	// update version so that linker doesn't need to inject it
 	err = version.Set(&version.Info{
 		GitCommit: "c",
-		Label:     "latest",
+		Label:     common.GetEnvOrDefaultString("NUCLIO_LABEL", "latest"),
 		Arch:      "amd64",
 		OS:        "linux",
 	})
