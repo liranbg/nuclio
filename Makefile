@@ -405,16 +405,13 @@ test-python:
 test-short: modules ensure-gopath
 	go test -v ./cmd/... ./pkg/... -short
 
-# Helpers for test-k8s-nuctl
-NUCTL_EXTERNAL_IP_ADDRESSES := $(if $(NUCTL_EXTERNAL_IP_ADDRESSES),$(NUCTL_EXTERNAL_IP_ADDRESSES),"localhost")
-NUCTL_BIN ?= $(GOPATH)/bin/$(NUCTL_BIN_NAME)
-
 .PHONY: test-nuctl
 test-k8s-nuctl:
-	NUCTL_EXTERNAL_IP_ADDRESSES=$(NUCTL_EXTERNAL_IP_ADDRESSES) \
+	NUCTL_EXTERNAL_IP_ADDRESSES=$(if $(NUCTL_EXTERNAL_IP_ADDRESSES),$(NUCTL_EXTERNAL_IP_ADDRESSES),"localhost") \
 		NUCTL_RUN_REGISTRY=$(NUCTL_REGISTRY) \
 		NUCTL_PLATFORM=kube \
-		go test -v github.com/nuclio/nuclio/pkg/nuctl/test/... -p 1
+		NAMESPACE=$(if $(NAMESPACE),$(NAMESPACE),"default")
+		go test -v github.com/nuclio/nuclio/pkg/nuctl/... -p 1
 
 .PHONY: build-base
 build-base: build-builder
