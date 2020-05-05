@@ -73,7 +73,7 @@ func (suite *functionBuildTestSuite) TestBuild() {
 			"body":   "-reverse this string+",
 			"via":    "external-ip",
 		},
-		true)
+		false)
 	suite.Require().NoError(err)
 
 	// make sure reverser worked
