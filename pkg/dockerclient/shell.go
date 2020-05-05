@@ -127,6 +127,8 @@ func (c *ShellClient) Build(buildOptions *BuildOptions) error {
 		// retry on a race condition where `--force-rm` removes a cached layer for other function build in process
 		if runErr != nil && strings.HasPrefix(runResults.Stderr, "No such image: sha256:") {
 			return false
+		} else if runErr != nil && strings.HasPrefix(runResults.Stderr, "failed to get digest sha256:") {
+			return false
 		}
 		return true
 	})
