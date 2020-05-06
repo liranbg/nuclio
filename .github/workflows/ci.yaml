@@ -79,7 +79,7 @@ jobs:
           path: nuctl
 
   build_docker_images:
-    name: Build nuclio docker images
+    name: Build docker images
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
