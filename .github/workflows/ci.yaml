@@ -12,7 +12,6 @@ env:
   REPO_NAME: nuclio
   NUCLIO_LABEL: ${{ github.run_number }}
   NAMESPACE: nuclio
-  NUCTL_REGISTRY: localhost:5000
 
 jobs:
   lint:
@@ -118,12 +117,11 @@ jobs:
           name: nuclio-docker-images
           path: nuclio_docker_images.tar.gz
 
-  test_k8s_nuctl:
-    name: Test Kubernetes nuctl
+  test_k8s:
+    name: Test Kubernetes
     runs-on: ubuntu-latest
     needs:
       - build_docker_images
-      - build_nuctl
     steps:
       - uses: actions/checkout@v2
 
@@ -161,22 +159,23 @@ jobs:
             | envsubst \
             | helm install --debug --wait --namespace ${NAMESPACE} -f - nuclio hack/k8s/helm/nuclio/
 
-      - name: Run nuctl tests
+      - name: Run test
         run: |
           set -o pipefail
-          make test-k8s-nuctl 2>&1 | tee nuctl-test-results-${NUCLIO_LABEL}.log
+          make test-k8s 2>&1 | tee test-k8s-${NUCLIO_LABEL}.log
         env:
           NUCLIO_DASHBOARD_DEFAULT_ONBUILD_REGISTRY_URL: ${{ env.REPO }}
           NUCTL_REGISTRY: "localhost:5000"
 
-      - uses: actions/upload-artifact@v1
+      - name: Upload test results
+        uses: actions/upload-artifact@v1
         with:
-          name: Nuctl tests results
-          path: nuctl-test-results-${{ env.NUCLIO_LABEL }}.log
+          name: K8s test results
+          path: k8s-test-results-${{ env.NUCLIO_LABEL }}.log
         if: ${{ always() }}
 
-  test_integration:
-    name: Test Integration
+  test_docker:
+    name: Test Docker
     runs-on: ubuntu-latest
     needs:
       - build_docker_images
@@ -188,7 +187,7 @@ jobs:
         with:
           name: nuclio-docker-images
 
-      - name: Prepare
+      - name: Load docker images
         run: |
           docker system prune --all --force
           docker load -i nuclio-docker-images/nuclio_docker_images.tar.gz
@@ -196,12 +195,12 @@ jobs:
       - name: Run test
         run: |
           set -o pipefail
-          rm -f results.log && make test 2>&1 | tee results.log
+          make test 2>&1 | tee test-docker-${NUCLIO_LABEL}.log
         env:
           NUCLIO_TEST_UNDOCKERIZE_TIMEOUT: 20m
 
       - uses: actions/upload-artifact@v1
         with:
-          name: Integration test results
-          path: results.log
+          name: Docker test results
+          path: test-docker-${NUCLIO_LABEL}.log
         if: ${{ always() }}
