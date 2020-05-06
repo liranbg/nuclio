@@ -170,7 +170,7 @@ jobs:
       - name: Upload test results
         uses: actions/upload-artifact@v1
         with:
-          name: k8s test results
+          name: test-results
           path: test-nuctl-k8s-${{ env.NUCLIO_LABEL }}.log
         if: ${{ always() }}
 
@@ -206,7 +206,7 @@ jobs:
       - name: Upload test results
         uses: actions/upload-artifact@v1
         with:
-          name: k8s test results
+          name: test-results
           path: test-nuctl-docker-${{ env.NUCLIO_LABEL }}.log
         if: ${{ always() }}
 
@@ -232,18 +232,18 @@ jobs:
         run: |
           set -o pipefail
           make test 2>&1 | tee test-integration-${NUCLIO_LABEL}.log
-          sudo journalctl -u docker.service > docker_service.log
+          sudo journalctl -u docker.service > docker_service_journalctl.log
         env:
           NUCLIO_TEST_UNDOCKERIZE_TIMEOUT: 20m
 
       - uses: actions/upload-artifact@v1
         with:
-          name: docker test results
+          name: integration-test-results
           path: test-integration-${{ env.NUCLIO_LABEL }}.log
         if: ${{ always() }}
 
       - uses: actions/upload-artifact@v1
         with:
-          name: docker service log
-          path: docker_service.log
+          name: integration-test-results
+          path: docker_service_journalctl.log
         if: ${{ always() }}
