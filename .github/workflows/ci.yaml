@@ -171,7 +171,7 @@ jobs:
         uses: actions/upload-artifact@v1
         with:
           name: K8s test results
-          path: k8s-test-results-${{ env.NUCLIO_LABEL }}.log
+          path: test-k8s-${{ env.NUCLIO_LABEL }}.log
         if: ${{ always() }}
 
   test_docker:
@@ -202,5 +202,5 @@ jobs:
       - uses: actions/upload-artifact@v1
         with:
           name: Docker test results
-          path: test-docker-${NUCLIO_LABEL}.log
+          path: test-docker-${{ env.NUCLIO_LABEL }}.log
         if: ${{ always() }}
