@@ -421,8 +421,8 @@ test-python:
 test-short: modules ensure-gopath
 	go test -v ./cmd/... ./pkg/... -short
 
-.PHONY: test-nuctl
-test-k8s-nuctl:
+.PHONY: test-k8s
+test-k8s:
 	NUCTL_EXTERNAL_IP_ADDRESSES=$(if $(NUCTL_EXTERNAL_IP_ADDRESSES),$(NUCTL_EXTERNAL_IP_ADDRESSES),"localhost") \
 		NUCTL_RUN_REGISTRY=$(NUCTL_REGISTRY) \
 		NUCTL_PLATFORM=kube \
