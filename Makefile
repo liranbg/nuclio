@@ -421,16 +421,16 @@ test-python:
 test-short: modules ensure-gopath
 	go test -v ./cmd/... ./pkg/... -short
 
-.PHONY: test-nuctl-k8s
-test-nuctl-k8s:
+.PHONY: test-k8s-nuctl
+test-k8s-nuctl:
 	NUCTL_EXTERNAL_IP_ADDRESSES=$(if $(NUCTL_EXTERNAL_IP_ADDRESSES),$(NUCTL_EXTERNAL_IP_ADDRESSES),"localhost") \
 		NUCTL_RUN_REGISTRY=$(NUCTL_REGISTRY) \
 		NUCTL_PLATFORM=kube \
 		NAMESPACE=$(if $(NAMESPACE),$(NAMESPACE),"default")
 		go test -v github.com/nuclio/nuclio/pkg/nuctl/... -p 1
 
-.PHONY: test-nuctl-docker
-test-nuctl-docker:
+.PHONY: test-docker-nuctl
+test-docker-nuctl:
 	NUCTL_PLATFORM=local \
 		go test -v github.com/nuclio/nuclio/pkg/nuctl/... -p 1
 

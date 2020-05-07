@@ -117,8 +117,8 @@ jobs:
           name: nuclio-docker-images
           path: nuclio_docker_images.tar.gz
 
-  test_k8s:
-    name: Test Kubernetes
+  test_k8s_nuctl:
+    name: Test Kubernetes nuctl
     runs-on: ubuntu-latest
     needs:
       - build_docker_images
@@ -159,10 +159,10 @@ jobs:
             | envsubst \
             | helm install --debug --wait --namespace ${NAMESPACE} -f - nuclio hack/k8s/helm/nuclio/
 
-      - name: Run test
+      - name: Run nuctl tests
         run: |
           set -o pipefail
-          make test-nuctl-k8s 2>&1 | tee test-nuctl-k8s-${NUCLIO_LABEL}.log
+          make test-k8s-nuctl 2>&1 | tee test-k8s-nuctl-${NUCLIO_LABEL}.log
         env:
           NUCLIO_DASHBOARD_DEFAULT_ONBUILD_REGISTRY_URL: ${{ env.REPO }}
           NUCTL_REGISTRY: "localhost:5000"
@@ -171,11 +171,11 @@ jobs:
         uses: actions/upload-artifact@v1
         with:
           name: test-results
-          path: test-nuctl-k8s-${{ env.NUCLIO_LABEL }}.log
+          path: test-k8s-nuctl-${{ env.NUCLIO_LABEL }}.log
         if: ${{ always() }}
 
-  test_docker:
-    name: Test Docker
+  test_docker_nuctl:
+    name: Test Docker nuctl
     runs-on: ubuntu-latest
     needs:
       - build_docker_images
@@ -198,16 +198,16 @@ jobs:
         run: |
           docker load -i nuclio-docker-images/nuclio_docker_images.tar.gz
 
-      - name: Run test
+      - name: Run nuctl tests
         run: |
           set -o pipefail
-          make test-nuctl-docker 2>&1 | tee test-nuctl-docker-${NUCLIO_LABEL}.log
+          make test-docker-nuctl 2>&1 | tee test-docker-nuctl-${NUCLIO_LABEL}.log
 
       - name: Upload test results
         uses: actions/upload-artifact@v1
         with:
           name: test-results
-          path: test-nuctl-docker-${{ env.NUCLIO_LABEL }}.log
+          path: test-docker-nuctl-${{ env.NUCLIO_LABEL }}.log
         if: ${{ always() }}
 
   test_integration:
