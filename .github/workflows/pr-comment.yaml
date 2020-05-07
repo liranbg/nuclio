@@ -1,0 +1,70 @@
+name: Monitor pr issued comments
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  run_ci_integ_comment:
+    name: Monitor comments
+    runs-on: ubuntu-latest
+    steps:
+      - id: command_monitor
+        uses: xt0rted/slash-command-action@v1.1.0
+        with:
+          repo-token: ${{ github.token }}
+          command: test
+          reaction: "true"
+          reaction-type: "+1"
+          allow-edits: "true"
+          permission-level: admin
+
+      # will get here of above expectations met
+      - uses: actions/checkout@v2
+        with:
+          ref: refs/pull/${{ github.event.issue.number }}/merge
+
+      - name: Remove
+        run: docker system prune --all --force
+
+      - name: Download docker images
+        run: |
+          echo "Getting commit SHA pre merge"
+          export SHA=$(git rev-parse --verify HEAD~1)
+          ./test/ci_assets/download_workflow_run_docker_images.sh
+        env:
+          REPOSITORY: ${{ github.repository }}
+          TOKEN: ${{ github.token }}
+
+      - name: Load docker images
+        run: docker load -i nuclio_docker_images.tar.gz
+
+      - name: Run test
+        run: |
+          set -o pipefail
+          make test 2>&1 | tee test-integration-${NUCLIO_LABEL}.log
+          sudo journalctl -u docker.service > docker_service_journalctl-${{ env.NUCLIO_LABEL }}.log
+        env:
+          NUCLIO_TEST_UNDOCKERIZE_TIMEOUT: 20m
+          NUCLIO_LABEL: ${{ github.run_number }}
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: integration-test-results
+          path: ./*-${{ env.NUCLIO_LABEL }}.log
+
+      - name: Mark as succeeded
+        uses: peter-evans/create-or-update-comment@v1
+        if: success()
+        with:
+          comment-id: ${{ github.event.comment.id }}
+          reactions: hooray
+
+      - name: Mark as failed
+        uses: peter-evans/create-or-update-comment@v1
+        if: failure()
+        with:
+          comment-id: ${{ github.event.comment.id }}
+          reactions: -1
