@@ -67,6 +67,10 @@ NUCLIO_BUILD_ARGS_VERSION_INFO_FILE = --build-arg NUCLIO_VERSION_INFO_FILE_CONTE
 # Docker client version to be used
 DOCKER_CLI_VERSION := 18.09.6
 
+# Nuclio test timeout
+NUCLIO_TEST_TIMEOUT ?= "10m"
+GO_TEST_NUCTL_COMMAND = $(go test -v github.com/nuclio/nuclio/pkg/nuctl/... -p 1 --timeout $(NUCLIO_TEST_TIMEOUT))
+
 #
 #  Must be first target
 #
@@ -375,18 +379,11 @@ lint: modules
 
 .PHONY: test-undockerized
 test-undockerized: ensure-gopath
-ifneq ($(NUCLIO_TEST_UNDOCKERIZE_TIMEOUT),)
 	go test \
 		-v \
 		--parallel 1 \
-		--timeout $(NUCLIO_TEST_UNDOCKERIZE_TIMEOUT) \
+		--timeout $(NUCLIO_TEST_TIMEOUT) \
 		./cmd/... ./pkg/...
-else
-	go test \
-		-v \
-		--parallel 1 \
-		./cmd/... ./pkg/...
-endif
 
 .PHONY: test
 test: ensure-gopath build-base
@@ -408,7 +405,7 @@ test: ensure-gopath build-base
 		--env NUCLIO_LABEL=$(NUCLIO_LABEL) \
 		--env NUCLIO_ARCH=$(NUCLIO_ARCH) \
 		--env NUCLIO_OS=$(NUCLIO_OS) \
-		--env NUCLIO_TEST_UNDOCKERIZE_TIMEOUT=$(NUCLIO_TEST_UNDOCKERIZE_TIMEOUT) \
+		--env NUCLIO_TEST_TIMEOUT=$(NUCLIO_TEST_TIMEOUT) \
 		$(NUCLIO_DOCKER_TEST_TAG) \
 		/bin/bash -c "make test-undockerized"
 
@@ -427,12 +424,11 @@ test-k8s-nuctl:
 		NUCTL_RUN_REGISTRY=$(NUCTL_REGISTRY) \
 		NUCTL_PLATFORM=kube \
 		NAMESPACE=$(if $(NAMESPACE),$(NAMESPACE),"default")
-		go test -v github.com/nuclio/nuclio/pkg/nuctl/... -p 1
+		$(GO_TEST_NUCTL_COMMAND)
 
 .PHONY: test-docker-nuctl
 test-docker-nuctl:
-	NUCTL_PLATFORM=local \
-		go test -v github.com/nuclio/nuclio/pkg/nuctl/... -p 1
+	NUCTL_PLATFORM=local $(GO_TEST_NUCTL_COMMAND)
 
 .PHONY: build-base
 build-base: build-builder
