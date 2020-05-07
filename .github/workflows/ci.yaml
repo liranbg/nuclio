@@ -209,36 +209,3 @@ jobs:
         with:
           name: test-results
           path: test-docker-nuctl-${{ env.NUCLIO_LABEL }}.log
-
-  test_integration:
-    name: Test Integration
-    runs-on: ubuntu-latest
-    needs:
-      - build_docker_images
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Fetch nuclio docker images
-        uses: actions/download-artifact@v1
-        with:
-          name: nuclio-docker-images
-
-      - name: Load docker images
-        run: |
-          docker system prune --all --force
-          docker load -i nuclio-docker-images/nuclio_docker_images.tar.gz
-
-      - name: Run test
-        run: |
-          set -o pipefail
-          make test 2>&1 | tee test-integration-${NUCLIO_LABEL}.log
-          sudo journalctl -u docker.service > docker_service_journalctl-${{ env.NUCLIO_LABEL }}.log
-        env:
-          NUCLIO_TEST_UNDOCKERIZE_TIMEOUT: 20m
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v2
-        if: always()
-        with:
-          name: integration-test-results
-          path: ./*-${{ env.NUCLIO_LABEL }}.log
