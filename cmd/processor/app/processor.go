@@ -354,7 +354,6 @@ func (p *Processor) hasHTTPTrigger(triggers []trigger.Trigger) bool {
 			return true
 		}
 	}
-
 	return false
 }
 

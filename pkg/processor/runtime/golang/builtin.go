@@ -17,6 +17,8 @@ limitations under the License.
 package golang
 
 import (
+	"unicode/utf8"
+
 	"github.com/nuclio/nuclio-sdk-go"
 )
 
@@ -34,7 +36,8 @@ func builtInHandler(context *nuclio.Context, event nuclio.Event) (interface{}, e
 		"Headers", event.GetHeaders(),
 		"ContentType", event.GetContentType(),
 		"ShardID", event.GetShardID(),
-		"Body", string(event.GetBody()))
+		"BodySize", utf8.RuneCount(event.GetBody()),
+	)
 
 	return "Built in handler called", nil
 }

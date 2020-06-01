@@ -19,6 +19,7 @@ import re
 import socket
 import sys
 import time
+import io
 import traceback
 
 import msgpack
@@ -27,9 +28,13 @@ import nuclio_sdk.json_encoder
 import nuclio_sdk.logger
 
 
-class Wrapper(object):
+class ConnectionException(Exception):
+    def __init__(self, message, *args, **kwargs):
+        super(ConnectionException, self).__init__(args, kwargs)
+        self._message = message
 
-    _max_message_size = 4 * 1024 * 1024
+
+class Wrapper(object):
 
     def __init__(self,
                  logger,
@@ -55,7 +60,10 @@ class Wrapper(object):
 
         # make a writeable file from processor
         self._processor_sock_wfile = self._processor_sock.makefile('w')
-        self._unpacker = msgpack.Unpacker(raw=False, max_buffer_size=10 * 1024 * 1024)
+
+        # NOTE: change max_buffer_size with caution
+        #   .. see security notes at https://github.com/msgpack/msgpack-python#security
+        self._unpacker = msgpack.Unpacker(raw=False, max_buffer_size=100 * 1024 * 1024)
 
         # get handler module
         entrypoint_module = sys.modules[self._entrypoint.__module__]
@@ -84,47 +92,39 @@ class Wrapper(object):
         """Read event from socket, send out reply"""
 
         int_buf = bytearray(4)
-        buf = memoryview(bytearray(self._max_message_size))
         minimum_float_duration = sys.float_info.min
+        buf = io.BytesIO()
 
         while True:
-
+            last_exc = None
             formatted_exception = None
             encoded_response = '{}'
 
             try:
-
+                buf.seek(0)
                 should_be_four = self._processor_sock.recv_into(int_buf, 4)
+
                 # client disconnect
                 if should_be_four < 4:
-                    # If socket is done, we can't log
-                    print('Client disconnect')
-                    return
+                    raise ConnectionException('Client disconnected')
 
-                bytes_to_read = int(int_buf[3])
-                bytes_to_read += int_buf[2] << 8
-                bytes_to_read += int_buf[1] << 16
-                bytes_to_read += int_buf[0] << 24
-                if bytes_to_read > self._max_message_size or bytes_to_read <= 0:
-                    # If socket is done, we can't log
-                    print('Illegal message size: ' + str(bytes_to_read))
-                    return
+                total_bytes_to_read = int(int_buf[3])
+                total_bytes_to_read += int_buf[2] << 8
+                total_bytes_to_read += int_buf[1] << 16
+                total_bytes_to_read += int_buf[0] << 24
+                if total_bytes_to_read <= 0:
+                    raise ConnectionException('Illegal message size: {0}'.format(total_bytes_to_read))
 
                 cumulative_bytes_read = 0
-                while cumulative_bytes_read < bytes_to_read:
-                    view = buf[cumulative_bytes_read:bytes_to_read]
-                    bytes_to_read_now = bytes_to_read - cumulative_bytes_read
-                    bytes_read = self._processor_sock.recv_into(view, bytes_to_read_now)
-
-                    # client disconnect
+                while cumulative_bytes_read < total_bytes_to_read:
+                    bytes_to_read_now = total_bytes_to_read - cumulative_bytes_read
+                    bytes_read = self._processor_sock.recv(bytes_to_read_now)
                     if not bytes_read:
-                        # If socket is done, we can't log
-                        print('Client disconnect')
-                        return
+                        raise ConnectionException('Client disconnect')
 
-                    cumulative_bytes_read += bytes_read
+                    cumulative_bytes_read += buf.write(bytes_read)
 
-                self._unpacker.feed(buf[:cumulative_bytes_read])
+                self._unpacker.feed(buf)
 
                 msg = next(self._unpacker)
 
@@ -155,6 +155,7 @@ class Wrapper(object):
 
             except Exception as exc:
                 formatted_exception = 'Exception caught while serving "{0}": {1}'.format(exc, traceback.format_exc())
+                last_exc = exc
 
             # if we have a formatted exception, return it as 500
             if formatted_exception is not None:
@@ -166,6 +167,14 @@ class Wrapper(object):
                     'content_type': 'text/plain',
                     'status_code': 500,
                 })
+
+            # Bail out on such errors, we should let the processor itself handle such cases (restarts, etc)
+            if last_exc and isinstance(last_exc, ConnectionException):
+
+                # processor socket might not be open for writing
+                # printing the exception to stdout
+                self._try_write_packet_to_processor('r' + encoded_response)
+                raise RuntimeError('Failed to recover from error')
 
             # write to the socket
             self._write_packet_to_processor('r' + encoded_response)
@@ -220,6 +229,12 @@ class Wrapper(object):
     def _write_packet_to_processor(self, body):
         self._processor_sock_wfile.write(body + '\n')
         self._processor_sock_wfile.flush()
+
+    def _try_write_packet_to_processor(self, body):
+        try:
+            self._write_packet_to_processor(body)
+        except Exception as exc:
+            print('Failed writing body to processor: {0}'.format(str(exc)))
 
 #
 # init
