@@ -30,12 +30,13 @@ import (
 
 type testSuite struct {
 	*triggertest.AbstractBrokerSuite
-	broker        *sarama.Broker
-	producer      sarama.SyncProducer
-	topic         string
-	consumerGroup string
-	initialOffset string
-	NumPartitions int32
+	broker            *sarama.Broker
+	producer          sarama.SyncProducer
+	topic             string
+	consumerGroup     string
+	initialOffset     string
+	NumPartitions     int32
+	dockerNetworkName string
 }
 
 func newTestSuite() *testSuite {
@@ -44,6 +45,7 @@ func newTestSuite() *testSuite {
 		consumerGroup: "myConsumerGroup",
 		initialOffset: "earliest",
 		NumPartitions: 4,
+		dockerNetworkName: "nuclio-kafka-test",
 	}
 
 	newTestSuite.AbstractBrokerSuite = triggertest.NewAbstractBrokerSuite(newTestSuite)
@@ -54,16 +56,28 @@ func newTestSuite() *testSuite {
 func (suite *testSuite) SetupSuite() {
 	suite.AbstractBrokerSuite.SetupSuite()
 
+	// create broker network
+	err := suite.DockerClient.CreateNetwork(&dockerclient.CreateNetworkOptions{
+		Name: suite.dockerNetworkName,
+	})
+	suite.Require().NoError(err, "Failed to create network")
+
+	// connect broker container to it
+	_, err = suite.ShellRunner.Run(nil, fmt.Sprintf("docker network connect %s %s",
+		suite.dockerNetworkName,
+		suite.BrokerContainerID))
+	suite.Require().NoError(err, "Failed to connect broker container to network")
+
 	suite.Logger.Info("Creating broker resources")
 
 	// create broker
-	suite.broker = sarama.NewBroker(fmt.Sprintf("%s:9092", suite.BrokerHost))
+	suite.broker = sarama.NewBroker(fmt.Sprintf("%s:9094", suite.BrokerHost))
 
 	brokerConfig := sarama.NewConfig()
-	brokerConfig.Version = sarama.V0_10_1_0
+	brokerConfig.Version = sarama.V0_11_0_0
 
 	// connect to the broker
-	err := suite.broker.Open(brokerConfig)
+	err = suite.broker.Open(brokerConfig)
 	suite.Require().NoError(err, "Failed to open broker")
 
 	// init a create topic request
@@ -82,28 +96,29 @@ func (suite *testSuite) SetupSuite() {
 	suite.Logger.InfoWith("Created topic", "topic", suite.topic, "response", resp)
 
 	// create a sync producer
-	suite.producer, err = sarama.NewSyncProducer([]string{fmt.Sprintf("%s:9092", suite.BrokerHost)}, nil)
+	suite.producer, err = sarama.NewSyncProducer([]string{fmt.Sprintf("%s:9094", suite.BrokerHost)}, nil)
 	suite.Require().NoError(err, "Failed to create sync producer")
+}
+
+func (suite *testSuite) TearDownSuite() {
+	suite.AbstractBrokerSuite.TearDownSuite()
+	defer suite.DockerClient.DeleteNetwork(suite.dockerNetworkName)
 }
 
 func (suite *testSuite) TestReceiveRecords() {
 	createFunctionOptions := suite.GetDeployOptions("event_recorder", suite.FunctionPaths["python"])
-	createFunctionOptions.FunctionConfig.Spec.Triggers = map[string]functionconfig.Trigger{}
-	createFunctionOptions.FunctionConfig.Spec.Triggers["http"] = functionconfig.Trigger{
-		Kind:       "http",
-		MaxWorkers: 1,
-		URL:        ":8080",
-		Attributes: map[string]interface{}{
-			"port": 8080,
-		},
+	createFunctionOptions.FunctionConfig.Spec.Platform.Attributes = map[string]interface{}{
+		"network": suite.dockerNetworkName,
 	}
-	createFunctionOptions.FunctionConfig.Spec.Triggers["my-kafka"] = functionconfig.Trigger{
-		Kind: "kafka-cluster",
-		URL:  fmt.Sprintf("%s:9092", suite.BrokerHost),
-		Attributes: map[string]interface{}{
-			"topics":        []string{suite.topic},
-			"consumerGroup": suite.consumerGroup,
-			"initialOffset": suite.initialOffset,
+	createFunctionOptions.FunctionConfig.Spec.Triggers = map[string]functionconfig.Trigger{
+		"my-kafka": {
+			Kind: "kafka-cluster",
+			URL:  fmt.Sprintf("%s:9092", "kafka"),
+			Attributes: map[string]interface{}{
+				"topics":        []string{suite.topic},
+				"consumerGroup": suite.consumerGroup,
+				"initialOffset": suite.initialOffset,
+			},
 		},
 	}
 
@@ -118,8 +133,19 @@ func (suite *testSuite) TestReceiveRecords() {
 // GetContainerRunInfo returns information about the broker container
 func (suite *testSuite) GetContainerRunInfo() (string, *dockerclient.RunOptions) {
 	return "spotify/kafka", &dockerclient.RunOptions{
-		Ports: map[int]int{2181: 2181, 9092: 9092},
-		Env:   map[string]string{"ADVERTISED_HOST": suite.BrokerHost, "ADVERTISED_PORT": "9092"},
+		Remove:        true,
+		ContainerName: "kafka",
+		Ports: map[int]int{
+			2181: 2181,
+			9092: 9092,
+			9094: 9094,
+		},
+		Env: map[string]string{
+			"KAFKA_ADVERTISED_LISTENERS": "INSIDE://:9092,OUTSIDE://:9094",
+			"KAFKA_LISTENERS": "INSIDE://:9092,OUTSIDE://:9094",
+			"KAFKA_LISTENER_SECURITY_PROTOCOL_MAP": "INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT",
+			"KAFKA_INTER_BROKER_LISTENER_NAME": "INSIDE",
+		},
 	}
 }
 
@@ -130,7 +156,7 @@ func (suite *testSuite) publishMessageToTopic(topic string, body string) error {
 		Value: sarama.StringEncoder(body),
 	}
 
-	suite.Logger.InfoWith("Producing")
+	suite.Logger.InfoWith("Producing", "topic", topic, "body", body)
 
 	partition, offset, err := suite.producer.SendMessage(&producerMessage)
 	suite.Require().NoError(err, "Failed to publish to queue")

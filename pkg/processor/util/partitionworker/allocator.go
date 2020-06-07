@@ -32,8 +32,7 @@ func NewPooledWorkerAllocator(parentLogger logger.Logger,
 		workerAllocator: workerAllocator,
 	}
 
-	newPooledWorkerAllocator.logger.DebugWith("Created")
-
+	newPooledWorkerAllocator.logger.DebugWith("Pooled worker allocator created")
 	return &newPooledWorkerAllocator, nil
 }
 

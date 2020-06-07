@@ -36,8 +36,8 @@ type BrokerSuite interface {
 
 type AbstractBrokerSuite struct {
 	processorsuite.TestSuite
-	brokerContainerID string
 	brokerSuite       BrokerSuite
+	BrokerContainerID string
 	BrokerHost        string
 	FunctionPaths     map[string]string
 }
@@ -73,7 +73,7 @@ func (suite *AbstractBrokerSuite) SetupSuite() {
 
 	// start the broker
 	if imageName != "" {
-		suite.brokerContainerID, err = suite.DockerClient.RunContainer(imageName, runOptions)
+		suite.BrokerContainerID, err = suite.DockerClient.RunContainer(imageName, runOptions)
 		suite.Require().NoError(err, "Failed to start broker container")
 
 		// wait for the broker to be ready
@@ -86,8 +86,8 @@ func (suite *AbstractBrokerSuite) TearDownSuite() {
 	suite.TestSuite.TearDownTest()
 
 	// if we weren't successful starting, nothing to do
-	if suite.brokerContainerID != "" {
-		suite.DockerClient.RemoveContainer(suite.brokerContainerID) // nolint: errcheck
+	if suite.BrokerContainerID != "" {
+		suite.DockerClient.RemoveContainer(suite.BrokerContainerID) // nolint: errcheck
 	}
 }
 

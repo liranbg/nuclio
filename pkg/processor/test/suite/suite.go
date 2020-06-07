@@ -18,6 +18,7 @@ package processorsuite
 
 import (
 	"fmt"
+	"github.com/nuclio/nuclio/pkg/cmdrunner"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -56,6 +57,7 @@ type TestSuite struct {
 	suite.Suite
 	Logger       logger.Logger
 	DockerClient dockerclient.Client
+	ShellRunner  *cmdrunner.ShellRunner
 	Platform     platform.Platform
 	TestID       string
 	Runtime      string
@@ -90,6 +92,9 @@ func (suite *TestSuite) SetupSuite() {
 	version.SetFromEnv()
 
 	suite.Logger, err = nucliozap.NewNuclioZapTest("test")
+	suite.Require().NoError(err)
+
+	suite.ShellRunner, err = cmdrunner.NewShellRunner(suite.Logger)
 	suite.Require().NoError(err)
 
 	suite.DockerClient, err = dockerclient.NewShellClient(suite.Logger, nil)
@@ -247,6 +252,7 @@ func (suite *TestSuite) GetDeployOptions(functionName string, functionPath strin
 	createFunctionOptions.FunctionConfig.Meta.Name = functionName
 	createFunctionOptions.FunctionConfig.Spec.Runtime = suite.Runtime
 	createFunctionOptions.FunctionConfig.Spec.Build.Path = functionPath
+	createFunctionOptions.FunctionConfig.Spec.Platform.Attributes = map[string]interface{}{}
 
 	suite.TempDir = suite.CreateTempDir()
 	createFunctionOptions.FunctionConfig.Spec.Build.TempDir = suite.TempDir
