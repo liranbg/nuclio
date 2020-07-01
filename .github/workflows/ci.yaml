@@ -162,6 +162,8 @@ jobs:
         cat test/k8s/ci_assets/helm_values.yaml \
           | envsubst \
           | helm install --debug --wait --namespace ${NAMESPACE} -f - nuclio hack/k8s/helm/nuclio/
+      env:
+        NUCLIO_DOCKER_REPO: ${{ env.REPO }}/${{ env.REPO_NAME }}
 
     - name: Run nuctl tests
       run: |
@@ -172,6 +174,7 @@ jobs:
         NUCTL_REGISTRY: "localhost:5000"
         NUCTL_NAMESPACE: ${{ env.NAMESPACE }}
         NUCTL_EXTERNAL_IP_ADDRESSES: ${{ env.NUCTL_EXTERNAL_IP_ADDRESSES }}
+        NUCLIO_DOCKER_REPO: ${{ env.REPO }}/${{ env.REPO_NAME }}
 
     - name: Upload test results
       uses: actions/upload-artifact@v2
@@ -200,6 +203,8 @@ jobs:
         docker login ${REPO} -u ${REPO_USER} -p ${{ github.token }}
         set -o pipefail
         make pull-docker-images test-docker-nuctl 2>&1 | tee test-docker-nuctl-${NUCLIO_LABEL}.log
+      env:
+        NUCLIO_DOCKER_REPO: ${{ env.REPO }}/${{ env.REPO_NAME }}
 
     - name: Upload test results
       uses: actions/upload-artifact@v2
