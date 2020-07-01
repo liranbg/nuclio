@@ -235,6 +235,7 @@ handler-builder-python-onbuild:
 	docker build \
 		--build-arg NUCLIO_ARCH=$(NUCLIO_ARCH) \
 		--build-arg NUCLIO_LABEL=$(NUCLIO_LABEL) \
+		--build-arg NUCLIO_DOCKER_REPO=$(NUCLIO_DOCKER_REPO) \
 		--file pkg/processor/build/runtime/python/docker/onbuild/Dockerfile \
 		--tag $(NUCLIO_DOCKER_HANDLER_BUILDER_PYTHON_ONBUILD_IMAGE_NAME) .
 
@@ -251,6 +252,7 @@ handler-builder-golang-onbuild-alpine: build-base
 	docker build \
 		--build-arg NUCLIO_GO_LINK_FLAGS_INJECT_VERSION="$(GO_LINK_FLAGS_INJECT_VERSION)" \
 		--build-arg NUCLIO_ARCH=$(NUCLIO_ARCH) \
+		--build-arg NUCLIO_DOCKER_REPO=$(NUCLIO_DOCKER_REPO) \
 		--build-arg NUCLIO_LABEL=$(NUCLIO_LABEL) \
 		--file pkg/processor/build/runtime/golang/docker/onbuild/Dockerfile.alpine \
 		--tag $(NUCLIO_DOCKER_HANDLER_BUILDER_GOLANG_ONBUILD_ALPINE_IMAGE_NAME) .
@@ -260,6 +262,7 @@ handler-builder-golang-onbuild: build-base handler-builder-golang-onbuild-alpine
 		--build-arg NUCLIO_GO_LINK_FLAGS_INJECT_VERSION="$(GO_LINK_FLAGS_INJECT_VERSION)" \
 		--build-arg NUCLIO_ARCH=$(NUCLIO_ARCH) \
 		--build-arg NUCLIO_LABEL=$(NUCLIO_LABEL) \
+		--build-arg NUCLIO_DOCKER_REPO=$(NUCLIO_DOCKER_REPO) \
 		--file pkg/processor/build/runtime/golang/docker/onbuild/Dockerfile \
 		--tag $(NUCLIO_DOCKER_HANDLER_BUILDER_GOLANG_ONBUILD_IMAGE_NAME) .
 
@@ -285,6 +288,7 @@ NUCLIO_DOCKER_HANDLER_BUILDER_PYPY_ONBUILD_IMAGE_NAME=$(NUCLIO_DOCKER_REPO)/hand
 handler-pypy:
 	docker build \
 		--file pkg/processor/build/runtime/pypy/docker/Dockerfile.handler-pypy \
+		--build-arg NUCLIO_DOCKER_REPO=$(NUCLIO_DOCKER_REPO) \
 		--build-arg NUCLIO_DOCKER_IMAGE_TAG=$(NUCLIO_DOCKER_IMAGE_TAG) \
 		--tag $(NUCLIO_DOCKER_HANDLER_BUILDER_PYPY_ONBUILD_IMAGE_NAME) .
 
@@ -299,6 +303,7 @@ handler-builder-nodejs-onbuild:
 	docker build \
 		--build-arg NUCLIO_ARCH=$(NUCLIO_ARCH) \
 		--build-arg NUCLIO_LABEL=$(NUCLIO_LABEL) \
+		--build-arg NUCLIO_DOCKER_REPO=$(NUCLIO_DOCKER_REPO) \
 		--file pkg/processor/build/runtime/nodejs/docker/onbuild/Dockerfile \
 		--tag $(NUCLIO_DOCKER_HANDLER_BUILDER_NODEJS_ONBUILD_IMAGE_NAME) .
 
@@ -312,6 +317,7 @@ handler-builder-ruby-onbuild:
 	docker build \
 		--build-arg NUCLIO_ARCH=$(NUCLIO_ARCH) \
 		--build-arg NUCLIO_LABEL=$(NUCLIO_LABEL) \
+		--build-arg NUCLIO_DOCKER_REPO=$(NUCLIO_DOCKER_REPO) \
 		--file pkg/processor/build/runtime/ruby/docker/onbuild/Dockerfile \
 		--tag $(NUCLIO_DOCKER_HANDLER_BUILDER_RUBY_ONBUILD_IMAGE_NAME) .
 
@@ -326,6 +332,7 @@ handler-builder-dotnetcore-onbuild: processor
 	docker build \
 		--build-arg NUCLIO_ARCH=$(NUCLIO_ARCH) \
 		--build-arg NUCLIO_LABEL=$(NUCLIO_LABEL) \
+		--build-arg NUCLIO_DOCKER_REPO=$(NUCLIO_DOCKER_REPO) \
 		-f $(NUCLIO_ONBUILD_DOTNETCORE_DOCKERFILE_PATH) \
 		-t $(NUCLIO_DOCKER_HANDLER_BUILDER_DOTNETCORE_ONBUILD_IMAGE_NAME) .
 
@@ -339,6 +346,7 @@ handler-builder-java-onbuild:
 	docker build \
 		--build-arg NUCLIO_ARCH=$(NUCLIO_ARCH) \
 		--build-arg NUCLIO_LABEL=$(NUCLIO_LABEL) \
+		--build-arg NUCLIO_DOCKER_REPO=$(NUCLIO_DOCKER_REPO) \
 		--file pkg/processor/build/runtime/java/docker/onbuild/Dockerfile \
 		--tag $(NUCLIO_DOCKER_HANDLER_BUILDER_JAVA_ONBUILD_IMAGE_NAME) .
 
