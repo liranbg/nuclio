@@ -109,7 +109,7 @@ jobs:
     - name: Freeing some disk space
       run: docker system prune --all --force
 
-    - name: Build
+    - name: Build & Push
       run: |
         docker login ${REPO} -u ${REPO_USER} -p ${{ github.token }}
         make docker-images push-docker-images
