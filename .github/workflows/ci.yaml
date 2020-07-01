@@ -143,6 +143,7 @@ jobs:
 
     - name: Prepare k8s cluster
       run: |
+        docker login ${REPO} -u ${REPO_USER} -p ${{ github.token }}
         kubectl create namespace ${NAMESPACE}
         docker run -d -p 5000:5000 registry:2
 
@@ -188,6 +189,7 @@ jobs:
 
     - name: Run nuctl tests
       run: |
+        docker login ${REPO} -u ${REPO_USER} -p ${{ github.token }}
         set -o pipefail
         make pull-docker-images test-docker-nuctl 2>&1 | tee test-docker-nuctl-${NUCLIO_LABEL}.log
 
