@@ -204,6 +204,7 @@ jobs:
         set -o pipefail
         make pull-docker-images test-docker-nuctl 2>&1 | tee test-docker-nuctl-${NUCLIO_LABEL}.log
       env:
+        NUCLIO_DASHBOARD_DEFAULT_ONBUILD_REGISTRY_URL: ${{ env.REPO }}
         NUCLIO_DOCKER_REPO: ${{ env.REPO }}/${{ env.REPO_NAME }}
 
     - name: Upload test results
