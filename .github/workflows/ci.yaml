@@ -12,7 +12,8 @@ on:
     - master
 
 env:
-  REPO: quay.io
+  REPO_USER: ${{ github.event.repository.owner.login }}
+  REPO: docker.pkg.github.com/${{ github.event.repository.owner.login }}
   REPO_NAME: nuclio
   NUCLIO_LABEL: ${{ github.run_number }}
   NAMESPACE: nuclio
@@ -88,7 +89,6 @@ jobs:
     name: Build docker images
     runs-on: ubuntu-latest
     steps:
-
     - name: Dump GitHub context
       run: echo "$GITHUB_CONTEXT"
       env:
@@ -110,31 +110,11 @@ jobs:
       run: docker system prune --all --force
 
     - name: Build
-      run: make docker-images
+      run: |
+        docker login ${REPO} -u ${REPO_USER} -p ${{ github.token }}
+        make docker-images push-docker-images
       env:
         NUCLIO_DOCKER_REPO: ${{ env.REPO }}/${{ env.REPO_NAME }}
-
-    # Clean build leftovers
-    - name: Post build cleanup
-      run: docker system prune --force
-
-    - name: Save
-      run: |
-        # list built images
-        # join with " "
-        # save docker images
-        # compress using pigz (use fast, the difference is insignificant)
-        docker images \
-            --filter="reference=${REPO}/${REPO_NAME}/*:${NUCLIO_LABEL}*" \
-            --format "{{ .Repository }}:{{ .Tag }}" \
-          | xargs docker save \
-          | pigz --fast > nuclio_docker_images.tar.gz
-
-    - name: Upload
-      uses: actions/upload-artifact@v2
-      with:
-        name: nuclio-docker-images
-        path: nuclio_docker_images.tar.gz
 
   test_k8s_nuctl:
     name: Test Kubernetes nuctl
@@ -161,23 +141,15 @@ jobs:
         kubernetes version: "v1.17.8"
         github token: ${{ github.token }}
 
-    - name: Fetch nuclio docker images
-      uses: actions/download-artifact@v2
-      with:
-        name: nuclio-docker-images
-
     - name: Prepare k8s cluster
       run: |
         kubectl create namespace ${NAMESPACE}
         docker run -d -p 5000:5000 registry:2
-        docker load -i nuclio_docker_images.tar.gz
-        rm nuclio_docker_images.tar.gz
 
         # setting nuctl external ip address to minikube ip
-        echo ::set-env name=NUCTL_EXTERNAL_IP_ADDRESSES::$(minikube ip)
+        echo "::set-env name=NUCTL_EXTERNAL_IP_ADDRESSES::$(minikube ip)"
 
-    - name: Install nuclio helm chart
-      run: |
+        # install nuclio helm chart
         cat test/k8s/ci_assets/helm_values.yaml \
           | envsubst \
           | helm install --debug --wait --namespace ${NAMESPACE} -f - nuclio hack/k8s/helm/nuclio/
@@ -185,7 +157,7 @@ jobs:
     - name: Run nuctl tests
       run: |
         set -o pipefail
-        make test-k8s-nuctl 2>&1 | tee test-k8s-nuctl-${NUCLIO_LABEL}.log
+        make pull-docker-images test-k8s-nuctl 2>&1 | tee test-k8s-nuctl-${NUCLIO_LABEL}.log
       env:
         NUCLIO_DASHBOARD_DEFAULT_ONBUILD_REGISTRY_URL: ${{ env.REPO }}
         NUCTL_REGISTRY: "localhost:5000"
@@ -214,20 +186,10 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-
 
-    - name: Fetch nuclio docker images
-      uses: actions/download-artifact@v2
-      with:
-        name: nuclio-docker-images
-
-    - name: Prepare
-      run: |
-        docker load -i nuclio_docker_images.tar.gz
-        rm nuclio_docker_images.tar.gz
-
     - name: Run nuctl tests
       run: |
         set -o pipefail
-        make test-docker-nuctl 2>&1 | tee test-docker-nuctl-${NUCLIO_LABEL}.log
+        make pull-docker-images test-docker-nuctl 2>&1 | tee test-docker-nuctl-${NUCLIO_LABEL}.log
 
     - name: Upload test results
       uses: actions/upload-artifact@v2

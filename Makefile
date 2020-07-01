@@ -128,15 +128,17 @@ tools: ensure-gopath nuctl
 	@echo Done.
 
 push-docker-images:
-	for image in $(IMAGES_TO_PUSH); do \
-		docker push $$image ; \
-	done
+	@echo "Pushing images concurrently $(IMAGES_TO_PUSH)"
+	@echo $(IMAGES_TO_PUSH) | xargs -n 1 -P 5 docker push
 	@echo Done.
 
 print-docker-images:
-	for image in $(IMAGES_TO_PUSH); do \
-		echo $$image ; \
-	done
+	@echo $(IMAGES_TO_PUSH) | xargs -n 1 -P 5 echo
+
+pull-docker-images:
+	@echo "Pulling images concurrently $(IMAGES_TO_PUSH)"
+	@echo $(IMAGES_TO_PUSH) | xargs -n 1 -P 5 docker pull
+	@echo Done.
 
 #
 # Tools
@@ -275,7 +277,8 @@ processor-pypy:
 		--build-arg NUCLIO_PYPY_OS=jessie \
 		--tag $(NUCLIO_DOCKER_PROCESSOR_PYPY_JESSIE_IMAGE_NAME) .
 
-IMAGES_TO_PUSH += $(NUCLIO_DOCKER_PROCESSOR_PYPY_JESSIE_IMAGE_NAME)
+# TODO: uncomment when ready
+#IMAGES_TO_PUSH += $(NUCLIO_DOCKER_PROCESSOR_PYPY_JESSIE_IMAGE_NAME)
 
 NUCLIO_DOCKER_HANDLER_BUILDER_PYPY_ONBUILD_IMAGE_NAME=$(NUCLIO_DOCKER_REPO)/handler-pypy2-5.9-jessie:$(NUCLIO_DOCKER_IMAGE_TAG)
 
@@ -285,7 +288,8 @@ handler-pypy:
 		--build-arg NUCLIO_DOCKER_IMAGE_TAG=$(NUCLIO_DOCKER_IMAGE_TAG) \
 		--tag $(NUCLIO_DOCKER_HANDLER_BUILDER_PYPY_ONBUILD_IMAGE_NAME) .
 
-IMAGES_TO_PUSH += $(NUCLIO_DOCKER_HANDLER_BUILDER_PYPY_ONBUILD_IMAGE_NAME)
+# TODO: uncomment when ready
+# IMAGES_TO_PUSH += $(NUCLIO_DOCKER_HANDLER_BUILDER_PYPY_ONBUILD_IMAGE_NAME)
 
 # NodeJS
 NUCLIO_DOCKER_HANDLER_BUILDER_NODEJS_ONBUILD_IMAGE_NAME=\
