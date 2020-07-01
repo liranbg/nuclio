@@ -15,7 +15,7 @@ env:
   REPO_USER: ${{ github.event.repository.owner.login }}
   REPO: docker.pkg.github.com/${{ github.event.repository.owner.login }}
   REPO_NAME: nuclio
-  NUCLIO_LABEL: ci-${{ github.run_number }}
+  NUCLIO_LABEL: ci-${{ github.event.pull_request.number }}
   NAMESPACE: nuclio
   NUCLIO_GO_TEST_TIMEOUT: "30m"
 
