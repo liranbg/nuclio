@@ -143,8 +143,16 @@ jobs:
 
     - name: Prepare k8s cluster
       run: |
+        # login
         docker login ${REPO} -u ${REPO_USER} -p ${{ github.token }}
+
+        # pull images
+        make pull-docker-images
+
+        # create nuclio namespace
         kubectl create namespace ${NAMESPACE}
+
+        # run registry to be used during tests
         docker run -d -p 5000:5000 registry:2
 
         # setting nuctl external ip address to minikube ip
@@ -158,7 +166,7 @@ jobs:
     - name: Run nuctl tests
       run: |
         set -o pipefail
-        make pull-docker-images test-k8s-nuctl 2>&1 | tee test-k8s-nuctl-${NUCLIO_LABEL}.log
+        make test-k8s-nuctl 2>&1 | tee test-k8s-nuctl-${NUCLIO_LABEL}.log
       env:
         NUCLIO_DASHBOARD_DEFAULT_ONBUILD_REGISTRY_URL: ${{ env.REPO }}
         NUCTL_REGISTRY: "localhost:5000"
