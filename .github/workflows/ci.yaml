@@ -109,9 +109,14 @@ jobs:
     - name: Freeing some disk space
       run: docker system prune --all --force
 
+    - uses: azure/docker-login@v1
+      with:
+        login-server: ${{ env.REPO }}
+        username: ${{ env.REPO_USER }}
+        password: ${{ github.token }}
+
     - name: Build & Push
       run: |
-        docker login ${REPO} -u ${REPO_USER} -p ${{ github.token }}
         make docker-images push-docker-images
       env:
         NUCLIO_DOCKER_REPO: ${{ env.REPO }}/${{ env.REPO_NAME }}
@@ -141,11 +146,14 @@ jobs:
         kubernetes version: "v1.17.8"
         github token: ${{ github.token }}
 
+    - uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.REPO }}
+          username: ${{ env.REPO_USER }}
+          password: ${{ github.token }}
+
     - name: Prepare k8s cluster
       run: |
-        # login
-        docker login ${REPO} -u ${REPO_USER} -p ${{ github.token }}
-
         # pull images
         make pull-docker-images
 
@@ -197,10 +205,14 @@ jobs:
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
+    - uses: azure/docker-login@v1
+      with:
+        login-server: ${{ env.REPO }}
+        username: ${{ env.REPO_USER }}
+        password: ${{ github.token }}
 
     - name: Run nuctl tests
       run: |
-        docker login ${REPO} -u ${REPO_USER} -p ${{ github.token }}
         set -o pipefail
         make pull-docker-images test-docker-nuctl 2>&1 | tee test-docker-nuctl-${NUCLIO_LABEL}.log
       env:
