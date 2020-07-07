@@ -99,11 +99,10 @@ jobs:
     - name: Freeing some disk space
       run: docker system prune --all --force
 
-    - uses: azure/docker-login@v1
-      with:
-        login-server: ${{ env.REPO }}
-        username: ${{ env.REPO_USER }}
-        password: ${{ secrets.CI_PUSH_IMAGES }}
+    - name: Login
+      run: docker login https://docker.pkg.github.com -u token --password-stdin <<< $GITHUB_TOKEN
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
 
     - name: Build
       run: make docker-images
