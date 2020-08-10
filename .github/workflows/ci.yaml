@@ -216,7 +216,10 @@ jobs:
 
   test_docker_nuctl:
     name: Test Docker nuctl
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
     needs:
     - build_docker_images
     steps:
