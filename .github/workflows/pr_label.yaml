@@ -1,13 +1,12 @@
 name: "Label PRs"
-on:
-  schedule:
-    - cron: "*/30 * * * *"
+
+on: pull_request_target
 
 jobs:
   execute:
     runs-on: ubuntu-latest
     steps:
-      - uses: jpmcb/prow-github-actions@v1.0.0
+      - uses: jpmcb/prow-github-actions@v1.1.0
         with:
           jobs: 'pr-labeler'
           github-token: "${{ secrets.GITHUB_TOKEN }}"
