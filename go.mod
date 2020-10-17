@@ -10,10 +10,15 @@ require (
 	github.com/Azure/go-autorest/autorest/to v0.4.0 // indirect
 	github.com/Azure/go-autorest/autorest/validation v0.3.0 // indirect
 	github.com/Microsoft/ApplicationInsights-Go v0.4.2
+	github.com/Microsoft/go-winio v0.4.14 // indirect
 	github.com/Shopify/sarama v1.23.1
 	github.com/aws/aws-sdk-go v1.30.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/disintegration/imaging v1.6.0
+	github.com/docker/distribution v2.7.1+incompatible // indirect
+	github.com/docker/docker v1.13.1 // indirect
+	github.com/docker/go-connections v0.4.0 // indirect
+	github.com/docker/go-units v0.4.0 // indirect
 	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/fatih/structs v1.1.0
 	github.com/ghodss/yaml v1.0.0
@@ -39,6 +44,7 @@ require (
 	github.com/nuclio/nuclio-sdk-go v0.2.0
 	github.com/nuclio/zap v0.0.4
 	github.com/olekukonko/tablewriter v0.0.1
+	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/prometheus/client_golang v1.1.0
 	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a
 	github.com/robfig/cron v1.2.0

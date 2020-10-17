@@ -45,7 +45,7 @@ func NewShellClient(parentLogger logger.Logger, runner cmdrunner.CmdRunner) (*Sh
 	var err error
 
 	newClient := &ShellClient{
-		logger:             parentLogger.GetChild("docker"),
+		logger:             parentLogger.GetChild("docker_shell"),
 		cmdRunner:          runner,
 		buildTimeout:       1 * time.Hour,
 		buildRetryInterval: 3 * time.Second,
