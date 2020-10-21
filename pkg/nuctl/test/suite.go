@@ -53,7 +53,7 @@ type Suite struct {
 	logger              logger.Logger
 	rootCommandeer      *command.RootCommandeer
 	dockerClient        dockerclient.Client
-	shellClient         *cmdrunner.ShellRunner
+	cmdRunner           cmdrunner.CmdRunner
 	outputBuffer        bytes.Buffer
 	inputBuffer         bytes.Buffer
 	defaultWaitDuration time.Duration
@@ -71,11 +71,11 @@ func (suite *Suite) SetupSuite() {
 	suite.Require().NoError(err)
 
 	// create shell runner
-	suite.shellClient, err = cmdrunner.NewShellRunner(suite.logger)
+	suite.cmdRunner, err = cmdrunner.NewCmdRunnerByOS(suite.logger)
 	suite.Require().NoError(err)
 
 	// create docker client
-	suite.dockerClient, err = dockerclient.NewShellClient(suite.logger, suite.shellClient)
+	suite.dockerClient, err = dockerclient.NewShellClient(suite.logger, suite.cmdRunner)
 	suite.Require().NoError(err)
 
 	// save platform kind before the test

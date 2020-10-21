@@ -19,10 +19,12 @@ package cmdrunner
 import (
 	"bytes"
 	"fmt"
-	"github.com/nuclio/logger"
-	"github.com/nuclio/nuclio/pkg/common"
 	"os/exec"
 	"runtime"
+
+	"github.com/nuclio/nuclio/pkg/common"
+
+	"github.com/nuclio/logger"
 )
 
 type CaptureOutputMode int

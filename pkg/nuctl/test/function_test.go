@@ -537,8 +537,8 @@ func (suite *functionDeployTestSuite) TestBuildWithSaveDeployWithLoad() {
 	suite.Require().NoError(err)
 
 	//  make sure to clean up after the test
-	defer suite.dockerClient.RemoveImage(imageName)    // nolint: errcheck
-	defer suite.shellClient.Run(nil, "rm %s", tarName) // nolint: errcheck
+	defer suite.dockerClient.RemoveImage(imageName)  // nolint: errcheck
+	defer suite.cmdRunner.Run(nil, "rm %s", tarName) // nolint: errcheck
 
 	// use deploy with the image we just created
 	err = suite.ExecuteNuctl([]string{"deploy", functionName, "--verbose"},
