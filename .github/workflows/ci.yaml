@@ -244,7 +244,10 @@ jobs:
 
     - name: Run nuctl docker tests
       run: |
-        make test-docker-nuctl
+        go test -v github.com/nuclio/nuclio/pkg/nuctl/... -p 1 --timeout ${NUCLIO_GO_TEST_TIMEOUT}
+      env:
+        NUCTL_PLATFORM: local
+        NUCLIO_GO_TEST_TIMEOUT: 30m
 
   test_k8s:
     name: Test Kubernetes
