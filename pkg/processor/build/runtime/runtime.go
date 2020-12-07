@@ -96,7 +96,7 @@ func NewAbstractRuntime(logger logger.Logger,
 		VersionInfo:    version.Get(),
 	}
 
-	newRuntime.CmdRunner, err = cmdrunner.NewShellRunner(newRuntime.Logger)
+	newRuntime.CmdRunner, err = cmdrunner.NewCmdRunnerByOS(newRuntime.Logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to create command runner")
 	}

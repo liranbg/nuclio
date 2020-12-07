@@ -217,7 +217,10 @@ jobs:
 
   test_docker_nuctl:
     name: Test Docker nuctl
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ windows-latest, ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
     needs:
     - build_docker_images
     steps:
@@ -235,6 +238,13 @@ jobs:
       with:
         name: nuclio-docker-images
 
+    - name: Setup docker on platform specific
+      if: startsWith(matrix.os,'windows')
+      run: |
+        Set-Content -Value "`{`"experimental`":true`}" -Path C:\ProgramData\docker\config\daemon.json
+        restart-service docker
+        docker info
+
     - name: Load nuclio docker images
       run: |
         docker load -i nuclio_docker_images.tar.gz
@@ -242,7 +252,9 @@ jobs:
 
     - name: Run nuctl docker tests
       run: |
-        make test-docker-nuctl
+        go test -v github.com/nuclio/nuclio/pkg/nuctl/... -p 1 --timeout 30m
+      env:
+        NUCTL_PLATFORM: local
 
   test_k8s:
     name: Test Kubernetes

@@ -53,7 +53,7 @@ func NewShellClient(parentLogger logger.Logger, runner cmdrunner.CmdRunner) (*Sh
 
 	// set cmdrunner
 	if newClient.cmdRunner == nil {
-		newClient.cmdRunner, err = cmdrunner.NewShellRunner(newClient.logger)
+		newClient.cmdRunner, err = cmdrunner.NewCmdRunnerByOS(newClient.logger)
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to create command runner")
 		}

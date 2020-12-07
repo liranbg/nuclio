@@ -20,12 +20,10 @@ import (
 	"bytes"
 	"fmt"
 	"os/exec"
-	"strings"
-	"syscall"
+	"runtime"
 
 	"github.com/nuclio/nuclio/pkg/common"
 
-	"github.com/nuclio/errors"
 	"github.com/nuclio/logger"
 )
 
@@ -58,97 +56,16 @@ type CmdRunner interface {
 	Run(runOptions *RunOptions, format string, vars ...interface{}) (RunResult, error)
 }
 
-type ShellRunner struct {
-	logger logger.Logger
-	shell  string
+func NewCmdRunnerByOS(parentLogger logger.Logger) (CmdRunner, error) {
+	switch runtime.GOOS {
+	case "windows":
+		return NewPowerShellRunner(parentLogger)
+	default:
+		return NewShellRunner(parentLogger)
+	}
 }
 
-func NewShellRunner(parentLogger logger.Logger) (*ShellRunner, error) {
-	return &ShellRunner{
-		logger: parentLogger.GetChild("runner"),
-		shell:  "/bin/sh",
-	}, nil
-}
-
-func (sr *ShellRunner) Run(runOptions *RunOptions, format string, vars ...interface{}) (RunResult, error) {
-
-	// support missing runOptions for tests that send nil
-	if runOptions == nil {
-		runOptions = &RunOptions{}
-	}
-
-	// format the command
-	formattedCommand := fmt.Sprintf(format, vars...)
-	redactedCommand := common.Redact(runOptions.LogRedactions, formattedCommand)
-	sr.logger.DebugWith("Executing", "command", redactedCommand)
-
-	// create a command
-	cmd := exec.Command(sr.shell, "-c", formattedCommand)
-
-	// if there are runOptions, set them
-	if runOptions.WorkingDir != nil {
-		cmd.Dir = *runOptions.WorkingDir
-	}
-
-	// get environment variables if any
-	if runOptions.Env != nil {
-		cmd.Env = sr.getEnvFromOptions(runOptions)
-	}
-
-	if runOptions.Stdin != nil {
-		cmd.Stdin = strings.NewReader(*runOptions.Stdin)
-	}
-
-	runResult := RunResult{
-		ExitCode: 0,
-	}
-
-	err := sr.runAndCaptureOutput(cmd, runOptions, &runResult)
-
-	if err != nil {
-		var exitCode int
-
-		// Did the command fail because of an unsuccessful exit code
-		if exitError, ok := err.(*exec.ExitError); ok {
-			exitCode = exitError.Sys().(syscall.WaitStatus).ExitStatus()
-		}
-
-		runResult.ExitCode = exitCode
-
-		sr.logger.DebugWith("Failed to execute command",
-			"output", runResult.Output,
-			"stderr", runResult.Stderr,
-			"exitCode", runResult.ExitCode,
-			"err", err)
-
-		err = errors.Wrapf(err, "stdout:\n%s\nstderr:\n%s", runResult.Output, runResult.Stderr)
-
-		return runResult, err
-	}
-
-	sr.logger.DebugWith("Command executed successfully",
-		"output", runResult.Output,
-		"stderr", runResult.Stderr,
-		"exitCode", runResult.ExitCode)
-
-	return runResult, nil
-}
-
-func (sr *ShellRunner) SetShell(shell string) {
-	sr.shell = shell
-}
-
-func (sr *ShellRunner) getEnvFromOptions(runOptions *RunOptions) []string {
-	envs := []string{}
-
-	for name, value := range runOptions.Env {
-		envs = append(envs, fmt.Sprintf("%s=%s", name, value))
-	}
-
-	return envs
-}
-
-func (sr *ShellRunner) runAndCaptureOutput(cmd *exec.Cmd,
+func runAndCaptureOutput(cmd *exec.Cmd,
 	runOptions *RunOptions,
 	runResult *RunResult) error {
 
@@ -173,4 +90,12 @@ func (sr *ShellRunner) runAndCaptureOutput(cmd *exec.Cmd,
 	}
 
 	return fmt.Errorf("Invalid output capture mode: %d", runOptions.CaptureOutputMode)
+}
+
+func getEnvFromOptions(runOptions *RunOptions) []string {
+	var envs []string
+	for name, value := range runOptions.Env {
+		envs = append(envs, fmt.Sprintf("%s=%s", name, value))
+	}
+	return envs
 }
