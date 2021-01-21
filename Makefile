@@ -152,9 +152,8 @@ tools: ensure-gopath nuctl
 	@echo Done.
 
 push-docker-images:
-	for image in $(IMAGES_TO_PUSH); do \
-		docker push $$image ; \
-	done
+	@echo "Pushing images concurrently $(IMAGES_TO_PUSH)"
+	@echo $(IMAGES_TO_PUSH) | xargs -n 1 -P 5 docker push
 	@echo Done.
 
 save-docker-images:
