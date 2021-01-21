@@ -11,14 +11,15 @@ on:
     - development
 
 env:
-  REPO: quay.io
-  REPO_NAME: nuclio
+  REPO: ghcr.io
+  REPO_NAME: liranbg
 
 jobs:
   release:
     name: Release ${{ matrix.arch }}
     runs-on: ubuntu-latest
-    if: github.repository == 'nuclio/nuclio'
+    # uncomment
+    # if: github.repository == 'nuclio/nuclio'
     strategy:
       matrix:
         arch: [ arm64, amd64 ]
@@ -66,8 +67,10 @@ jobs:
     - uses: azure/docker-login@v1
       with:
         login-server: ${{ env.REPO }}
-        username: ${{ secrets.QUAYIO_DOCKER_USERNAME }}
-        password: ${{ secrets.QUAYIO_DOCKER_PASSWORD }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+#        username: ${{ secrets.QUAYIO_DOCKER_USERNAME }}
+#        password: ${{ secrets.QUAYIO_DOCKER_PASSWORD }}
 
     - name: Build
       run: make docker-images
