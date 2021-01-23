@@ -47,15 +47,15 @@ jobs:
 
           # map runtimes to desired onbuild-targets
           # golang,python:3.6 -> golang python
-          if [ "${{ github.event.inputs.runtimes }}" != "all" ]; then\
+          if [ "${{ github.event.inputs.runtimes }}" == "all" ]; then\
+            RUNTIMES=(golang java python dotnetcore nodejs);\
+          else\
             RUNTIMES=();\
             while IFS=',' read -ra INPUT_RUNTIMES; do\
               for i in "${INPUT_RUNTIMES[@]}"; do\
                 RUNTIMES+=("$(echo "$i" | cut -d":" -f1)");\
               done\
             done <<<"${{ github.event.inputs.runtimes }}";\
-          else\
-            RUNTIMES=(golang java python dotnetcore nodejs);\
           fi;
 
           DOCKER_IMAGES_RULES=processor;\
