@@ -52,6 +52,9 @@ class Runtimes(object):
     nodejs = "nodejs"
     dotnetcore = "dotnetcore"
 
+    # NOTE: python is just a reference to python3.6
+    python = "python"
+
     # TODO: support benchmarking - add "empty function'
     # shell = "shell"
     # ruby = "ruby"
@@ -59,11 +62,13 @@ class Runtimes(object):
     @staticmethod
     def runtime_to_bm_function_handler(runtime):
         return {
-            Runtimes.golang: "empty:Handler",
+            Runtimes.python: "empty:handler",
             Runtimes.python36: "empty:handler",
+            Runtimes.golang: "empty:Handler",
             Runtimes.java: "EmptyHandler",
             Runtimes.nodejs: "empty:handler",
             Runtimes.dotnetcore: "nuclio:empty",
+
         }[runtime]
 
     @staticmethod
