@@ -45,10 +45,12 @@ class Wrapper(object):
                  namespace=None,
                  worker_id=None,
                  trigger_kind=None,
-                 trigger_name=None):
+                 trigger_name=None,
+                 json_encoder_decoder=False):
         self._logger = logger
         self._socket_path = socket_path
-        self._json_encoder = nuclio_sdk.json_encoder.Encoder()
+        self._json_encoder = nuclio_sdk.json_encoder.Factory.create_encoder(json_encoder_decoder)
+        self._json_decoder = nuclio_sdk.json_encoder.Factory.create_decoder(json_encoder_decoder)
         self._entrypoint = None
         self._processor_sock = None
         self._platform = nuclio_sdk.Platform(platform_kind, namespace=namespace)
@@ -105,7 +107,7 @@ class Wrapper(object):
                 event_message = self._resolve_event(event_message_length)
 
                 # instantiate event message
-                event = nuclio_sdk.Event.from_msgpack(event_message)
+                event = nuclio_sdk.Event.from_msgpack(event_message, self._json_decoder)
 
                 try:
                     self._handle_event(event)
@@ -261,7 +263,7 @@ class Wrapper(object):
         # measure duration, set to minimum float in case execution was too fast
         duration = time.time() - start_time or sys.float_info.min
 
-        self._write_packet_to_processor('m' + json.dumps({'duration': duration}))
+        self._write_packet_to_processor('m' + self._json_encoder.encode({'duration': duration}))
 
         response = nuclio_sdk.Response.from_entrypoint_output(self._json_encoder.encode,
                                                               entrypoint_output)
@@ -316,6 +318,12 @@ def parse_args():
 
     parser.add_argument('--worker-id')
 
+    # NOTE: incoming events may still be processed by msgpack
+    parser.add_argument('--json-encoder-decoder',
+                        help='Json encoder decoder library to use for encode / decode processed events.',
+                        choices=['json', 'orjson'],
+                        default='json')
+
     return parser.parse_args()
 
 
@@ -344,7 +352,8 @@ def run_wrapper():
                                    args.namespace,
                                    args.worker_id,
                                    args.trigger_kind,
-                                   args.trigger_name)
+                                   args.trigger_name,
+                                   args.json_encoder_decoder)
 
     except BaseException as exc:
         root_logger.error_with('Caught unhandled exception while initializing',

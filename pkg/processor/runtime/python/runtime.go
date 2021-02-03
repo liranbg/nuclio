@@ -93,6 +93,12 @@ func (py *python) RunWrapper(socketPath string) (*os.Process, error) {
 		"--trigger-name", py.configuration.TriggerName,
 	}
 
+	// TODO: experimental. options: json (default), orjson
+	// once graduate, set "orjson" should pass to function configuration
+	if encoderDecoderName := os.Getenv("NUCLIO_PYTHON_JSON_ENCODER_DECODER_NAME"); encoderDecoderName != "" {
+		args = append(args, "--json-encoder-decoder", encoderDecoderName)
+	}
+
 	py.Logger.DebugWith("Running wrapper", "command", strings.Join(args, " "))
 
 	cmd := exec.Command(args[0], args[1:]...)
