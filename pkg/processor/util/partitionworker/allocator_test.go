@@ -208,11 +208,12 @@ func (suite *partitionWorkerAllocatorTestSuite) TestStaticAllocatorStress() {
 		// waits a bit and then returns the worker
 		go func(partitionReaderIdx int) {
 			prevWorkerIndex := -1
-			suite.logger.DebugWith("Working on partition reader", "idx", partitionReaderIdx)
+			suite.logger.DebugWith("Working on partition reader", "partitionReaderIdx", partitionReaderIdx)
 
 			for {
 				select {
 				case <-messageChannels[partitionReaderIdx]:
+					suite.logger.DebugWith("Allocating worker", "partitionReaderIdx", partitionReaderIdx)
 					workerInstance, cookie, err := partitionWorkerAllocator.AllocateWorker(topic,
 						partitionIDs[partitionReaderIdx],
 						nil)
@@ -230,6 +231,9 @@ func (suite *partitionWorkerAllocatorTestSuite) TestStaticAllocatorStress() {
 					time.Sleep(100 * time.Microsecond)
 
 					// release the worker
+					suite.logger.DebugWith("Releasing worker",
+						"partitionReaderIdx", partitionReaderIdx,
+						"prevWorkerIndex", prevWorkerIndex)
 					err = partitionWorkerAllocator.ReleaseWorker(cookie, workerInstance)
 					suite.Require().NoError(err)
 
