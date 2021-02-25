@@ -208,6 +208,7 @@ func (suite *partitionWorkerAllocatorTestSuite) TestStaticAllocatorStress() {
 		// waits a bit and then returns the worker
 		go func(partitionReaderIdx int) {
 			prevWorkerIndex := -1
+			suite.logger.DebugWith("Working on partition reader", "idx", partitionReaderIdx)
 
 			for {
 				select {
@@ -235,6 +236,8 @@ func (suite *partitionWorkerAllocatorTestSuite) TestStaticAllocatorStress() {
 				default:
 
 					// nothing more to read - we're done
+					suite.logger.DebugWith("Nothing to read. Done.",
+						"partitionReaderIdx", partitionReaderIdx)
 					waitGroup.Done()
 
 					// exit the loop
