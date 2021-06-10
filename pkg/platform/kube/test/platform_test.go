@@ -23,12 +23,15 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/nuclio/nuclio/pkg/common"
+	"github.com/nuclio/nuclio/pkg/containerimagebuilderpusher"
+	"github.com/nuclio/nuclio/pkg/dockerclient"
 	"github.com/nuclio/nuclio/pkg/functionconfig"
 	"github.com/nuclio/nuclio/pkg/platform"
 	"github.com/nuclio/nuclio/pkg/platform/kube"
@@ -358,10 +361,7 @@ func (suite *DeployFunctionTestSuite) TestSecurityContext() {
 		FSGroup:    &fsGroup,
 	}
 	suite.DeployFunction(createFunctionOptions, func(deployResult *platform.CreateFunctionResult) bool {
-		deploymentInstance := &appsv1.Deployment{}
-		suite.GetResourceAndUnmarshal("deployment",
-			kube.DeploymentNameFromFunctionName(functionName),
-			deploymentInstance)
+		deploymentInstance := suite.GetFunctionDeployment(functionName)
 
 		// ensure function deployment was enriched
 		suite.Require().NotNil(deploymentInstance.Spec.Template.Spec.SecurityContext.RunAsUser)
@@ -555,6 +555,63 @@ func (suite *DeployFunctionTestSuite) TestMinMaxReplicas() {
 		suite.GetResourceAndUnmarshal("hpa", kube.HPANameFromFunctionName(functionName), hpaInstance)
 		suite.Require().Equal(two, int(*hpaInstance.Spec.MinReplicas))
 		suite.Require().Equal(three, int(hpaInstance.Spec.MaxReplicas))
+		return true
+	})
+}
+
+func (suite *DeployFunctionTestSuite) TestBuildWithKaniko() {
+
+	// TODO: replace 45.0.0.106 with a fixed host
+	functionName := "build-with-kaniko"
+
+	// must specify "/tmp" here so that it's available on docker for mac
+	tempDir, err := ioutil.TempDir("/tmp", "nuclio-kaniko-test-*")
+	suite.Require().NoError(err)
+	defer os.RemoveAll(tempDir)
+
+	kubePlatform := suite.Platform.(*kube.Platform)
+	createFunctionOptions := suite.CompileCreateFunctionOptions(functionName)
+	createFunctionOptions.FunctionConfig.Spec.Build.TempDir = tempDir
+	createFunctionOptions.FunctionConfig.Spec.Build.Registry = "45.0.0.106:5000"
+	tmpContainerBuilder := suite.Platform.(*kube.Platform).ContainerBuilder
+	defer func() {
+		kubePlatform.ContainerBuilder = tmpContainerBuilder
+	}()
+
+	// serves the compressed function to kaniko
+	testFileServerPublishedPort := 30444
+	testFileServerContainerID, err := suite.DockerClient.RunContainer("nginx:latest", &dockerclient.RunOptions{
+		ContainerName: "nuclio-test-file-server",
+		Ports: map[int]int{
+			testFileServerPublishedPort: 80,
+		},
+		Remove: true,
+		Volumes: map[string]string{
+			tempDir: "/usr/share/nginx/html/assets",
+		},
+	})
+	suite.Require().NoError(err)
+	defer func() {
+		suite.DockerClient.RemoveContainer(testFileServerContainerID) // nolint: errcheck
+	}()
+
+	newContainerBuilderPusherConfiguration := containerimagebuilderpusher.NewContainerBuilderConfiguration()
+	newContainerBuilderPusherConfiguration.Kind = containerimagebuilderpusher.ContainerBuilderKindKaniko
+	newContainerBuilderPusherConfiguration.CreateFunctionTarSymlinkOntoNginxAssetsDir = false
+	newContainerBuilderPusherConfiguration.InsecurePullRegistry = true
+	newContainerBuilderPusherConfiguration.InsecurePushRegistry = true
+	newContainerBuilderPusherConfiguration.DefaultOnbuildRegistryURL = "45.0.0.106:5000"
+	newContainerBuilderPusherConfiguration.NginxAssetsURL = fmt.Sprintf("http://%s:%d/assets/tar",
+		"45.0.0.106", testFileServerPublishedPort)
+	suite.PlatformConfiguration.ContainerBuilderConfiguration = newContainerBuilderPusherConfiguration
+	kubePlatform.ContainerBuilder, err = containerimagebuilderpusher.NewClient(kubePlatform.Logger,
+		suite.PlatformConfiguration.ContainerBuilderConfiguration,
+		suite.KubeClientSet)
+	suite.Require().NoError(err)
+	suite.DeployFunction(createFunctionOptions, func(deployResult *platform.CreateFunctionResult) bool {
+
+		// function is up & running
+		suite.Require().Equal(functionconfig.FunctionStateReady, deployResult.FunctionStatus.State)
 		return true
 	})
 }
