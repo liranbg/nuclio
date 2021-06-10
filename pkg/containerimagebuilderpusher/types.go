@@ -1,6 +1,9 @@
 package containerimagebuilderpusher
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/nuclio/nuclio/pkg/common"
 	"github.com/nuclio/nuclio/pkg/processor/build/runtime"
 )
@@ -21,18 +24,28 @@ type BuildOptions struct {
 	BuildTimeoutSeconds int64
 }
 
+type ContainerBuilderKind string
+
+const (
+	ContainerBuilderKindDocker = "docker"
+	ContainerBuilderKindKaniko = "kaniko"
+	ContainerBuilderKindNop    = "nop"
+)
+
 type ContainerBuilderConfiguration struct {
-	Kind                                 string
-	BusyBoxImage                         string
-	KanikoImage                          string
-	KanikoImagePullPolicy                string
-	JobPrefix                            string
-	DefaultRegistryCredentialsSecretName string
-	DefaultBaseRegistryURL               string
-	DefaultOnbuildRegistryURL            string
-	CacheRepo                            string
-	InsecurePushRegistry                 bool
-	InsecurePullRegistry                 bool
+	Kind                                       ContainerBuilderKind
+	BusyBoxImage                               string
+	KanikoImage                                string
+	KanikoImagePullPolicy                      string
+	CreateFunctionTarSymlinkOntoNginxAssetsDir bool
+	NginxAssetsURL                             string
+	JobPrefix                                  string
+	DefaultRegistryCredentialsSecretName       string
+	DefaultBaseRegistryURL                     string
+	DefaultOnbuildRegistryURL                  string
+	CacheRepo                                  string
+	InsecurePushRegistry                       bool
+	InsecurePullRegistry                       bool
 }
 
 func NewContainerBuilderConfiguration() *ContainerBuilderConfiguration {
@@ -40,8 +53,8 @@ func NewContainerBuilderConfiguration() *ContainerBuilderConfiguration {
 
 	// if some of the parameters are undefined, try environment variables
 	if containerBuilderConfiguration.Kind == "" {
-		containerBuilderConfiguration.Kind = common.GetEnvOrDefaultString("NUCLIO_CONTAINER_BUILDER_KIND",
-			"docker")
+		containerBuilderConfiguration.Kind = ContainerBuilderKind(common.GetEnvOrDefaultString("NUCLIO_CONTAINER_BUILDER_KIND",
+			"docker"))
 	}
 	if containerBuilderConfiguration.BusyBoxImage == "" {
 		containerBuilderConfiguration.BusyBoxImage = common.GetEnvOrDefaultString("NUCLIO_BUSYBOX_CONTAINER_IMAGE",
@@ -80,6 +93,13 @@ func NewContainerBuilderConfiguration() *ContainerBuilderConfiguration {
 
 	containerBuilderConfiguration.CacheRepo =
 		common.GetEnvOrDefaultString("NUCLIO_DASHBOARD_KANIKO_CACHE_REPO", "")
+
+	containerBuilderConfiguration.CreateFunctionTarSymlinkOntoNginxAssetsDir =
+		common.GetEnvOrDefaultBool("NUCLIO_CREATE_FUNCTION_TAR_SYMLINK_ONTO_NGINX_ASSETS_DIR", true)
+
+	nuclioDashboardDeploymentName := os.Getenv("NUCLIO_DASHBOARD_DEPLOYMENT_NAME")
+	containerBuilderConfiguration.NginxAssetsURL = common.GetEnvOrDefaultString("NUCLIO_NGINX_ASSETS_URL",
+		fmt.Sprintf("http://%s:8070/assets", nuclioDashboardDeploymentName))
 
 	return &containerBuilderConfiguration
 }

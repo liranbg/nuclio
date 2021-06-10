@@ -134,22 +134,12 @@ func NewPlatform(parentLogger logger.Logger,
 	}
 
 	// create container builder
-	if platformConfiguration.ContainerBuilderConfiguration.Kind == "kaniko" {
-		newPlatform.ContainerBuilder, err = containerimagebuilderpusher.NewKaniko(newPlatform.Logger,
-			newPlatform.consumer.KubeClientSet, platformConfiguration.ContainerBuilderConfiguration)
-		if err != nil {
-			return nil, errors.Wrap(err, "Failed to create a kaniko builder")
-		}
-	} else {
-
-		// Default container image builder
-		newPlatform.ContainerBuilder, err = containerimagebuilderpusher.NewDocker(newPlatform.Logger,
-			platformConfiguration.ContainerBuilderConfiguration)
-		if err != nil {
-			return nil, errors.Wrap(err, "Failed to create a Docker builder")
-		}
+	newPlatform.ContainerBuilder, err = containerimagebuilderpusher.NewClient(newPlatform.Logger,
+		platformConfiguration.ContainerBuilderConfiguration,
+		newPlatform.consumer.KubeClientSet)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to create container image builder pusher client")
 	}
-
 	return newPlatform, nil
 }
 

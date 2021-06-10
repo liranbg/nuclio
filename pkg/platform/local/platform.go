@@ -101,9 +101,12 @@ func NewPlatform(parentLogger logger.Logger,
 		return nil, errors.Wrap(err, "Failed to create a command runner")
 	}
 
-	if newPlatform.ContainerBuilder, err = containerimagebuilderpusher.NewDocker(newPlatform.Logger,
-		platformConfiguration.ContainerBuilderConfiguration); err != nil {
-		return nil, errors.Wrap(err, "Failed to create containerimagebuilderpusher")
+	// create container builder
+	newPlatform.ContainerBuilder, err = containerimagebuilderpusher.NewClient(newPlatform.Logger,
+		platformConfiguration.ContainerBuilderConfiguration,
+		nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to create container image builder pusher client")
 	}
 
 	// create a docker client

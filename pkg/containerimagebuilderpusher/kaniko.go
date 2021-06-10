@@ -58,7 +58,7 @@ func NewKaniko(logger logger.Logger, kubeClientSet kubernetes.Interface,
 }
 
 func (k *Kaniko) GetKind() string {
-	return "kaniko"
+	return ContainerBuilderKindKaniko
 }
 
 func (k *Kaniko) BuildAndPushContainerImage(buildOptions *BuildOptions, namespace string) error {
@@ -78,7 +78,7 @@ func (k *Kaniko) BuildAndPushContainerImage(buildOptions *BuildOptions, namespac
 	k.logger.DebugWith("Create kaniko job", "namespace", namespace, "jobSpec", kanikoJobSpec)
 	kanikoJob, err := k.kubeClientSet.BatchV1().Jobs(namespace).Create(kanikoJobSpec)
 	if err != nil {
-		return errors.Wrap(err, "Failed to publish kaniko job")
+		return errors.Wrap(err, "Failed to create kaniko job")
 	}
 
 	// Cleanup
@@ -149,6 +149,7 @@ func (k *Kaniko) GetOnbuildImageRegistry(registry string) string {
 }
 
 func (k *Kaniko) createContainerBuildBundle(image string, contextDir string, tempDir string) (string, string, error) {
+	var assetPath string
 
 	// Create temp directory to store compressed container build bundle
 	buildContainerBundleDir := path.Join(tempDir, "tar")
@@ -171,19 +172,26 @@ func (k *Kaniko) createContainerBuildBundle(image string, contextDir string, tem
 	tarFile.Close() // nolint: errcheck
 
 	k.logger.DebugWith("Compressing build bundle", "tarFilePath", tarFile.Name())
+
+	// TODO: use builtin tar package
 	if _, err := k.cmdRunner.Run(&cmdrunner.RunOptions{
 		WorkingDir: &buildContainerBundleDir,
 	}, "tar -zcvf %s %s", path.Base(tarFile.Name()), contextDir); err != nil {
 		return "", "", errors.Wrapf(err, "Failed to compress build bundle")
 	}
 
-	// Create symlink to bundle tar file in nginx serving directory
-	assetPath := path.Join("/etc/nginx/static/assets", path.Base(tarFile.Name()))
-	k.logger.DebugWith("Creating symlink to bundle tar",
-		"tarFileName", tarFile.Name(),
-		"assetPath", assetPath)
-	if err := os.Link(tarFile.Name(), assetPath); err != nil {
-		return "", "", errors.Wrapf(err, "Failed to create symlink to build bundle")
+	if k.builderConfiguration.CreateFunctionTarSymlinkOntoNginxAssetsDir {
+
+		// Create symlink to bundle tar file in nginx serving directory
+		assetPath := path.Join("/etc/nginx/static/assets", path.Base(tarFile.Name()))
+		k.logger.DebugWith("Creating symlink to bundle tar",
+			"tarFileName", tarFile.Name(),
+			"assetPath", assetPath)
+		if err := os.Link(tarFile.Name(), assetPath); err != nil {
+			return "", "", errors.Wrapf(err, "Failed to create symlink to build bundle")
+		}
+	} else {
+		assetPath = tarFile.Name()
 	}
 
 	return path.Base(tarFile.Name()), assetPath, nil
@@ -232,6 +240,9 @@ func (k *Kaniko) compileKanikoJobSpec(namespace string,
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      jobName,
 			Namespace: namespace,
+			Labels: map[string]string{
+				"nuclio.io/app": "dashboard-kaniko",
+			},
 		},
 		Spec: batchv1.JobSpec{
 			Completions:           &completions,
@@ -258,7 +269,7 @@ func (k *Kaniko) compileKanikoJobSpec(namespace string,
 							Image: k.builderConfiguration.BusyBoxImage,
 							Command: []string{
 								"wget",
-								fmt.Sprintf("http://%s:8070/assets/%s", os.Getenv("NUCLIO_DASHBOARD_DEPLOYMENT_NAME"), bundleFilename),
+								fmt.Sprintf("%s/%s", k.builderConfiguration.NginxAssetsURL, bundleFilename),
 								"-P",
 								"/tmp",
 							},
