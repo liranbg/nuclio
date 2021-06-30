@@ -283,10 +283,10 @@ jobs:
           docker run --rm --detach --network=host alpine ash -c "apk add socat && socat TCP-LISTEN:5000,reuseaddr,fork TCP:$(minikube ip):5000"
           minikube kubectl -- config view --flatten > kubeconfig_flatten
 
-      - name: Fetch nuclio docker images
-        uses: actions/download-artifact@v2
-        with:
-          name: nuclio-docker-images
+#      - name: Fetch nuclio docker images
+#        uses: actions/download-artifact@v2
+#        with:
+#          name: nuclio-docker-images
 
       - name: Load nuclio docker images
         run: |
