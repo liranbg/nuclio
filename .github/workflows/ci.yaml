@@ -19,128 +19,128 @@ env:
   NUCLIO_GO_TEST_TIMEOUT: "30m"
 
 jobs:
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-    - name: Dump github context
-      run: echo "$GITHUB_CONTEXT"
-      env:
-        GITHUB_CONTEXT: ${{ toJson(github) }}
-
-    - name: Dump runner context
-      run: echo "$RUNNER_CONTEXT"
-      env:
-        RUNNER_CONTEXT: ${{ toJson(runner) }}
-
-    - uses: actions/checkout@v2
-
-    - uses: actions/setup-go@v2
-      with:
-        go-version: "1.14"
-
-    - uses: actions/cache@v2
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
-
-    - name: Ensure go test files are build annotated
-      run: |
-        make ensure-test-files-annotated
-
-    - name: Lint
-      run: make lint
-
-  test_short:
-    name: Test short
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-
-    - uses: actions/setup-go@v2
-      with:
-        go-version: "1.14"
-
-    - uses: actions/cache@v2
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
-
-    - name: Run unit test
-      run: |
-        make test-unit
-
-  build_nuctl:
-    name: Build nuctl
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-
-    - uses: actions/setup-go@v2
-      with:
-        go-version: "1.14"
-
-    - name: Build
-      run: |
-        make nuctl-bin
-
-    - name: Ensure version
-      run: |
-        ./nuctl-$NUCLIO_LABEL-linux-amd64 version
-
-  build_docker_images:
-    name: Build docker images
-    runs-on: ubuntu-latest
-    steps:
-    - name: Dump GitHub context
-      run: echo "$GITHUB_CONTEXT"
-      env:
-        GITHUB_CONTEXT: ${{ toJson(github) }}
-
-    - name: Dump runner context
-      run: echo "$RUNNER_CONTEXT"
-      env:
-        RUNNER_CONTEXT: ${{ toJson(runner) }}
-
-    - name: Dump github ref
-      run: echo "$GITHUB_REF"
-
-    - uses: actions/checkout@v2
-
-    # since github-actions gives us 14G only, and fills it up with some garbage
-    # we will free up some space for us (~2GB)
-    - name: Freeing up disk space
-      run: |
-        chmod +x "${GITHUB_WORKSPACE}/hack/scripts/ci/free-space.sh"
-        "${GITHUB_WORKSPACE}/hack/scripts/ci/free-space.sh"
-
-    - name: Build
-      run: make docker-images
-      env:
-        NUCLIO_DOCKER_REPO: ${{ env.REPO }}/${{ env.REPO_NAME }}
-
-    # Clean build leftovers
-    - name: Post build cleanup
-      run: docker system prune --force
-
-    - name: Save
-      run: make save-docker-images
-
-    - name: Upload
-      uses: actions/upload-artifact@v2
-      with:
-        name: nuclio-docker-images
-        path: nuclio-docker-images-*.tar.gz
+#  lint:
+#    name: Lint
+#    runs-on: ubuntu-latest
+#    steps:
+#    - name: Dump github context
+#      run: echo "$GITHUB_CONTEXT"
+#      env:
+#        GITHUB_CONTEXT: ${{ toJson(github) }}
+#
+#    - name: Dump runner context
+#      run: echo "$RUNNER_CONTEXT"
+#      env:
+#        RUNNER_CONTEXT: ${{ toJson(runner) }}
+#
+#    - uses: actions/checkout@v2
+#
+#    - uses: actions/setup-go@v2
+#      with:
+#        go-version: "1.14"
+#
+#    - uses: actions/cache@v2
+#      with:
+#        path: ~/go/pkg/mod
+#        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+#        restore-keys: |
+#          ${{ runner.os }}-go-
+#
+#    - name: Ensure go test files are build annotated
+#      run: |
+#        make ensure-test-files-annotated
+#
+#    - name: Lint
+#      run: make lint
+#
+#  test_short:
+#    name: Test short
+#    runs-on: ubuntu-latest
+#    steps:
+#    - uses: actions/checkout@v2
+#
+#    - uses: actions/setup-go@v2
+#      with:
+#        go-version: "1.14"
+#
+#    - uses: actions/cache@v2
+#      with:
+#        path: ~/go/pkg/mod
+#        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+#        restore-keys: |
+#          ${{ runner.os }}-go-
+#
+#    - name: Run unit test
+#      run: |
+#        make test-unit
+#
+#  build_nuctl:
+#    name: Build nuctl
+#    runs-on: ubuntu-latest
+#    steps:
+#    - uses: actions/checkout@v2
+#
+#    - uses: actions/setup-go@v2
+#      with:
+#        go-version: "1.14"
+#
+#    - name: Build
+#      run: |
+#        make nuctl-bin
+#
+#    - name: Ensure version
+#      run: |
+#        ./nuctl-$NUCLIO_LABEL-linux-amd64 version
+#
+#  build_docker_images:
+#    name: Build docker images
+#    runs-on: ubuntu-latest
+#    steps:
+#    - name: Dump GitHub context
+#      run: echo "$GITHUB_CONTEXT"
+#      env:
+#        GITHUB_CONTEXT: ${{ toJson(github) }}
+#
+#    - name: Dump runner context
+#      run: echo "$RUNNER_CONTEXT"
+#      env:
+#        RUNNER_CONTEXT: ${{ toJson(runner) }}
+#
+#    - name: Dump github ref
+#      run: echo "$GITHUB_REF"
+#
+#    - uses: actions/checkout@v2
+#
+#    # since github-actions gives us 14G only, and fills it up with some garbage
+#    # we will free up some space for us (~2GB)
+#    - name: Freeing up disk space
+#      run: |
+#        chmod +x "${GITHUB_WORKSPACE}/hack/scripts/ci/free-space.sh"
+#        "${GITHUB_WORKSPACE}/hack/scripts/ci/free-space.sh"
+#
+#    - name: Build
+#      run: make docker-images
+#      env:
+#        NUCLIO_DOCKER_REPO: ${{ env.REPO }}/${{ env.REPO_NAME }}
+#
+#    # Clean build leftovers
+#    - name: Post build cleanup
+#      run: docker system prune --force
+#
+#    - name: Save
+#      run: make save-docker-images
+#
+#    - name: Upload
+#      uses: actions/upload-artifact@v2
+#      with:
+#        name: nuclio-docker-images
+#        path: nuclio-docker-images-*.tar.gz
 
   test_k8s_nuctl:
     name: Test Kubernetes nuctl
     runs-on: ubuntu-latest
-    needs:
-    - build_docker_images
+#    needs:
+#    - build_docker_images
     steps:
     - uses: actions/checkout@v2
 
@@ -170,23 +170,29 @@ jobs:
         docker run --rm --detach --network=host alpine ash -c "apk add socat && socat TCP-LISTEN:5000,reuseaddr,fork TCP:$(minikube ip):5000"
         minikube kubectl -- config view --flatten > kubeconfig_flatten
 
-    - name: Fetch nuclio docker images
-      uses: actions/download-artifact@v2
-      with:
-        name: nuclio-docker-images
+#    - name: Fetch nuclio docker images
+#      uses: actions/download-artifact@v2
+#      with:
+#        name: nuclio-docker-images
 
     - name: Load nuclio docker images
       run: |
 
+        NUCLIO_LABEL=unstable make pull-docker-images
+        NUCLIO_NEW_LABEL=$NUCLIO_LABEL NUCLIO_LABEL=unstable make retag-docker-images
+
         # load nuclio docker images to host docker
-        make load-docker-images
+        # make load-docker-images
 
         # activate minikube docker
         eval $(minikube -p minikube docker-env)
 
+        NUCLIO_LABEL=unstable make pull-docker-images
+        NUCLIO_NEW_LABEL=$NUCLIO_LABEL NUCLIO_LABEL=unstable make retag-docker-images
+
         # load nuclio docker images to minikube
-        make load-docker-images
-        rm nuclio-docker-images*.tar.gz
+        #make load-docker-images
+        #rm nuclio-docker-images*.tar.gz
 
     - name: Export env
       run: |
@@ -213,35 +219,35 @@ jobs:
 
         # run test
         make test-k8s-nuctl
-
-  test_docker_nuctl:
-    name: Test Docker nuctl
-    runs-on: ubuntu-latest
-    needs:
-    - build_docker_images
-    steps:
-    - uses: actions/checkout@v2
-
-    - uses: actions/cache@v2
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
-
-    - name: Fetch nuclio docker images
-      uses: actions/download-artifact@v2
-      with:
-        name: nuclio-docker-images
-
-    - name: Load nuclio docker images
-      run: |
-        make load-docker-images
-        rm nuclio-docker-images*.tar.gz
-
-    - name: Run nuctl docker tests
-      run: |
-        make test-docker-nuctl
+#
+#  test_docker_nuctl:
+#    name: Test Docker nuctl
+#    runs-on: ubuntu-latest
+#    needs:
+#    - build_docker_images
+#    steps:
+#    - uses: actions/checkout@v2
+#
+#    - uses: actions/cache@v2
+#      with:
+#        path: ~/go/pkg/mod
+#        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+#        restore-keys: |
+#          ${{ runner.os }}-go-
+#
+#    - name: Fetch nuclio docker images
+#      uses: actions/download-artifact@v2
+#      with:
+#        name: nuclio-docker-images
+#
+#    - name: Load nuclio docker images
+#      run: |
+#        make load-docker-images
+#        rm nuclio-docker-images*.tar.gz
+#
+#    - name: Run nuctl docker tests
+#      run: |
+#        make test-docker-nuctl
 
   test_k8s:
     name: Test Kubernetes
@@ -284,8 +290,10 @@ jobs:
 
       - name: Load nuclio docker images
         run: |
-          make load-docker-images
-          rm nuclio-docker-images*.tar.gz
+#          make load-docker-images
+#          rm nuclio-docker-images*.tar.gz
+          NUCLIO_LABEL=unstable make pull-docker-images
+          NUCLIO_NEW_LABEL=$NUCLIO_LABEL NUCLIO_LABEL=unstable make retag-docker-images
 
       - name: Export env
         run: |
@@ -310,23 +318,23 @@ jobs:
           echo "${NUCTL_EXTERNAL_IP_ADDRESSES} ${NUCLIO_TEST_KUBE_DEFAULT_INGRESS_HOST}" | sudo tee -a /etc/hosts
 
           make test-k8s
-
-  test_python:
-    name: Test python
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Run python test
-      run: |
-        make test-python
-
-  test_nodejs:
-    name: Test NodeJS
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Run NodeJS test
-      run: |
-        make test-nodejs
+#
+#  test_python:
+#    name: Test python
+#    runs-on: ubuntu-latest
+#    steps:
+#    - uses: actions/checkout@v2
+#
+#    - name: Run python test
+#      run: |
+#        make test-python
+#
+#  test_nodejs:
+#    name: Test NodeJS
+#    runs-on: ubuntu-latest
+#    steps:
+#    - uses: actions/checkout@v2
+#
+#    - name: Run NodeJS test
+#      run: |
+#        make test-nodejs
