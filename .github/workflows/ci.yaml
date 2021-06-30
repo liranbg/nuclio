@@ -14,7 +14,7 @@ on:
 env:
   REPO: quay.io
   REPO_NAME: nuclio
-  NUCLIO_LABEL: ${{ github.run_number }}
+  NUCLIO_LABEL: unstable
   NAMESPACE: nuclio
   NUCLIO_GO_TEST_TIMEOUT: "30m"
 
@@ -177,22 +177,9 @@ jobs:
 
     - name: Load nuclio docker images
       run: |
-
-        NUCLIO_LABEL=unstable make pull-docker-images
-        NUCLIO_NEW_LABEL=$NUCLIO_LABEL NUCLIO_LABEL=unstable make retag-docker-images
-
-        # load nuclio docker images to host docker
-        # make load-docker-images
-
-        # activate minikube docker
-        eval $(minikube -p minikube docker-env)
-
-        NUCLIO_LABEL=unstable make pull-docker-images
-        NUCLIO_NEW_LABEL=$NUCLIO_LABEL NUCLIO_LABEL=unstable make retag-docker-images
-
-        # load nuclio docker images to minikube
-        #make load-docker-images
-        #rm nuclio-docker-images*.tar.gz
+        make pull-docker-images
+        eval $(minikube -p minikube docker-env)make pull-docker-images
+        make pull-docker-images
 
     - name: Export env
       run: |
@@ -219,6 +206,10 @@ jobs:
 
         # run test
         make test-k8s-nuctl
+
+    - name: Setup tmate session
+      if: ${{ failure() }}
+      uses: mxschmitt/action-tmate@v3
 #
 #  test_docker_nuctl:
 #    name: Test Docker nuctl
@@ -290,8 +281,7 @@ jobs:
 
       - name: Load nuclio docker images
         run: |
-          NUCLIO_LABEL=unstable make pull-docker-images
-          NUCLIO_NEW_LABEL=$NUCLIO_LABEL NUCLIO_LABEL=unstable make retag-docker-images
+          make pull-docker-images
 
       - name: Export env
         run: |
@@ -316,6 +306,10 @@ jobs:
           echo "${NUCTL_EXTERNAL_IP_ADDRESSES} ${NUCLIO_TEST_KUBE_DEFAULT_INGRESS_HOST}" | sudo tee -a /etc/hosts
 
           make test-k8s
+
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
 #
 #  test_python:
 #    name: Test python
