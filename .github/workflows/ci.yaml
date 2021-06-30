@@ -290,8 +290,6 @@ jobs:
 
       - name: Load nuclio docker images
         run: |
-#          make load-docker-images
-#          rm nuclio-docker-images*.tar.gz
           NUCLIO_LABEL=unstable make pull-docker-images
           NUCLIO_NEW_LABEL=$NUCLIO_LABEL NUCLIO_LABEL=unstable make retag-docker-images
 
