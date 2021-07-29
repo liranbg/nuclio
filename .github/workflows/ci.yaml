@@ -75,6 +75,9 @@ jobs:
     - name: Install nuclio helm chart
       run: |
         minikube kubectl -- create namespace ${NAMESPACE}
+        cat test/k8s/ci_assets/helm_values.yaml \
+          | envsubst \
+          | helm install --debug --wait --namespace ${NAMESPACE} -f - nuclio hack/k8s/helm/nuclio/
 
     - name: Setup tmate session
       if: ${{ failure() }}
@@ -88,9 +91,3 @@ jobs:
 
         # run test
         make test-k8s-nuctl
-
-
-
-#        cat test/k8s/ci_assets/helm_values.yaml \
-#          | envsubst \
-#          | helm install --debug --wait --namespace ${NAMESPACE} -f - nuclio hack/k8s/helm/nuclio/
