@@ -306,40 +306,11 @@ func (suite *FunctionMonitoringTestSuite) TestRecoverErrorStateFunctionWhenResou
 		nodeName := pod.Spec.NodeName
 
 		// mark the node as unschedulable, we want to evict the pod from there
-		suite.Logger.InfoWith("Setting cluster node as unschedulable", "nodeName", nodeName)
-		_, err := suite.KubeClientSet.CoreV1().Nodes().Update(&v1.Node{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      nodeName,
-				Namespace: suite.Namespace,
-			},
-			Spec: v1.NodeSpec{
-				Unschedulable: true,
-			},
-		})
-		suite.Require().NoError(err, "Failed to set nodes unschedulable")
+		err := suite.DrainNode(nodeName, true)
+		suite.Require().NoError(err, "Failed to drain node %s", nodeName)
 
 		// no matter how this test ends up - ensure the node is schedulable again
-		defer func() {
-			_, err := suite.KubeClientSet.CoreV1().Nodes().Update(&v1.Node{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      nodeName,
-					Namespace: suite.Namespace,
-				},
-				Spec: v1.NodeSpec{
-					Unschedulable: false,
-				},
-			})
-			suite.Require().NoError(err)
-		}()
-
-		// delete function pod
-		zeroSeconds := int64(0)
-		suite.Logger.InfoWith("Deleting function pod", "podName", pod.Name)
-		err = suite.KubeClientSet.CoreV1().Pods(suite.Namespace).Delete(pod.Name,
-			&metav1.DeleteOptions{
-				GracePeriodSeconds: &zeroSeconds,
-			})
-		suite.Require().NoError(err, "Failed to delete function pod")
+		defer suite.UnCordonNode(nodeName)
 
 		// wait for controller to mark function in error due to pods being unschedulable
 		suite.WaitForFunctionState(getFunctionOptions,

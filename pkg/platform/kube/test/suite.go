@@ -339,6 +339,20 @@ func (suite *KubeTestSuite) GetFunctionPods(functionName string) []v1.Pod {
 	return pods.Items
 }
 
+func (suite *KubeTestSuite) DrainNode(nodeName string, ignoreDaemonSet bool) error {
+	positionalArgs := []string{"drain", nodeName}
+	if ignoreDaemonSet {
+		positionalArgs = append(positionalArgs, "--ignore-daemonsets")
+	}
+	_, err := suite.executeKubectl(positionalArgs, nil)
+	return err
+}
+
+func (suite *KubeTestSuite) UnCordonNode(nodeName string) error {
+	_, err := suite.executeKubectl([]string{"uncordon", nodeName}, nil)
+	return err
+}
+
 func (suite *KubeTestSuite) GetNodes() []v1.Node {
 	nodesList, err := suite.KubeClientSet.CoreV1().Nodes().List(metav1.ListOptions{})
 	suite.Require().NoError(err)
