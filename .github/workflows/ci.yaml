@@ -214,34 +214,34 @@ jobs:
           # run test
           make test-k8s-nuctl
 
-    test_docker_nuctl:
-      name: Test Docker nuctl
-      runs-on: ubuntu-latest
-      needs:
-        - build_docker_images
-      steps:
-        - uses: actions/checkout@v2
+  test_docker_nuctl:
+    name: Test Docker nuctl
+    runs-on: ubuntu-latest
+    needs:
+      - build_docker_images
+    steps:
+      - uses: actions/checkout@v2
 
-        - uses: actions/cache@v2
-          with:
-            path: ~/go/pkg/mod
-            key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-            restore-keys: |
-              ${{ runner.os }}-go-
+      - uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
-        - name: Fetch nuclio docker images
-          uses: actions/download-artifact@v2
-          with:
-            name: nuclio-docker-images
+      - name: Fetch nuclio docker images
+        uses: actions/download-artifact@v2
+        with:
+          name: nuclio-docker-images
 
-        - name: Load nuclio docker images
-          run: |
-            make load-docker-images
-            rm nuclio-docker-images*.tar.gz
+      - name: Load nuclio docker images
+        run: |
+          make load-docker-images
+          rm nuclio-docker-images*.tar.gz
 
-        - name: Run nuctl docker tests
-          run: |
-            make test-docker-nuctl
+      - name: Run nuctl docker tests
+        run: |
+          make test-docker-nuctl
 
   test_k8s:
     name: Test Kubernetes
