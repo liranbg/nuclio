@@ -34,6 +34,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/core/v1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -302,24 +303,34 @@ func (suite *FunctionMonitoringTestSuite) TestRecoverErrorStateFunctionWhenResou
 		// get function pod, first one is enough
 		pod := suite.GetFunctionPods(functionName)[0]
 
-		// get node name on which function pod is running
-		nodeName := pod.Spec.NodeName
+		suite.WithResourceQuota(&v1.ResourceQuota{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "nuclio-test-rq",
+				Namespace: suite.Namespace,
+			},
+			Spec: v1.ResourceQuotaSpec{
+				Hard: v1.ResourceList{
+					v1.ResourcePods: resource.MustParse("0"),
+				},
+			},
+			Status: v1.ResourceQuotaStatus{},
+		}, func() {
 
-		// mark the node as unschedulable, we want to evict the pod from there
-		err := suite.DrainNode(nodeName, true)
-		suite.Require().NoError(err, "Failed to drain node %s", nodeName)
+			// evict pod from node
+			err := suite.KubeClientSet.PolicyV1beta1().Evictions(pod.Namespace).Evict(&policyv1beta1.Eviction{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      pod.Name,
+					Namespace: pod.Namespace,
+				},
+			})
+			suite.Require().NoError(err)
 
-		// no matter how this test ends up - ensure the node is schedulable again
-		defer suite.UnCordonNode(nodeName)
+			// wait for controller to mark function in error due to pods being unschedulable
+			suite.WaitForFunctionState(getFunctionOptions,
+				functionconfig.FunctionStateUnhealthy,
+				functionMonitoringSleepTimeout)
 
-		// wait for controller to mark function in error due to pods being unschedulable
-		suite.WaitForFunctionState(getFunctionOptions,
-			functionconfig.FunctionStateUnhealthy,
-			functionMonitoringSleepTimeout)
-
-		// mark k8s cluster nodes as schedulable
-		err = suite.UnCordonNode(nodeName)
-		suite.Require().NoError(err, "Failed to set node schedulable")
+		})
 
 		// wait for function pods to run, meaning its deployment is available
 		suite.WaitForFunctionPods(functionName, time.Minute, func(pods []v1.Pod) bool {

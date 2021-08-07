@@ -330,6 +330,23 @@ func (suite *KubeTestSuite) GetFunctionIngress(functionName string) *extensionsv
 	return ingressInstance
 }
 
+func (suite *KubeTestSuite) WithResourceQuota(rq *v1.ResourceQuota, handler func()) {
+	// limit running pod on a node
+	resourceQuota, err := suite.KubeClientSet.
+		CoreV1().
+		ResourceQuotas(suite.Namespace).
+		Create(rq)
+	suite.Require().NoError(err)
+
+	// clean leftovers
+	defer suite.KubeClientSet.
+		CoreV1().
+		ResourceQuotas(suite.Namespace).
+		Delete(resourceQuota.Name, &metav1.DeleteOptions{}) // nolint: errcheck
+
+	handler()
+}
+
 func (suite *KubeTestSuite) GetFunctionPods(functionName string) []v1.Pod {
 	pods, err := suite.KubeClientSet.CoreV1().Pods(suite.Namespace).List(metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("nuclio.io/function-name=%s", functionName),
