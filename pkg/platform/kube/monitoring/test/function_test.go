@@ -22,7 +22,6 @@ package test
 import (
 	"encoding/base64"
 	"fmt"
-	"strconv"
 	"testing"
 	"time"
 
@@ -34,7 +33,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/core/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -57,70 +55,6 @@ func (suite *FunctionMonitoringTestSuite) SetupSuite() {
 
 func (suite *FunctionMonitoringTestSuite) TearDownSuite() {
 	monitoring.PostDeploymentMonitoringBlockingInterval = suite.oldPostDeploymentMonitoringBlockingInterval
-}
-
-func (suite *FunctionMonitoringTestSuite) TestRecoverFromPodsHardLimit() {
-	functionName := "function-pods-hard-limit"
-	createFunctionOptions := suite.CompileCreateFunctionOptions(functionName)
-	getFunctionOptions := &platform.GetFunctionsOptions{
-		Name:      createFunctionOptions.FunctionConfig.Meta.Name,
-		Namespace: createFunctionOptions.FunctionConfig.Meta.Namespace,
-	}
-	zero := 0
-	two := 2
-	createFunctionOptions.FunctionConfig.Spec.Replicas = &two
-	_ = suite.DeployFunction(createFunctionOptions, func(deployResult *platform.CreateFunctionResult) bool {
-
-		// limit pod to zero
-		resourceQuota, err := suite.KubeClientSet.
-			CoreV1().
-			ResourceQuotas(suite.Namespace).
-			Create(&v1.ResourceQuota{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "nuclio-test-rq",
-					Namespace: suite.Namespace,
-				},
-				Spec: v1.ResourceQuotaSpec{
-					Hard: v1.ResourceList{
-						v1.ResourcePods: resource.MustParse(strconv.Itoa(zero)),
-					},
-				},
-				Status: v1.ResourceQuotaStatus{},
-			})
-		suite.Require().NoError(err)
-
-		// clean leftovers
-		defer suite.KubeClientSet.
-			CoreV1().
-			ResourceQuotas(suite.Namespace).
-			Delete(resourceQuota.Name, &metav1.DeleteOptions{}) // nolint: errcheck
-
-		// delete function pods
-		suite.DeleteFunctionPods(functionName)
-
-		// function becomes unhealthy, due to exceeding pods deployment hard limit
-		suite.WaitForFunctionState(getFunctionOptions,
-			functionconfig.FunctionStateUnhealthy,
-			3*time.Minute)
-
-		// increase hard limit, allowing the function reach its potential replicas
-		resourceQuota.Spec.Hard = v1.ResourceList{
-			v1.ResourcePods: resource.MustParse(strconv.Itoa(two)),
-		}
-
-		// remove to allow updating
-		resourceQuota.ResourceVersion = ""
-		suite.Logger.InfoWith("Updating resource quota",
-			"podsResourceQuota", resourceQuota.Spec.Hard.Pods())
-		_, err = suite.KubeClientSet.CoreV1().ResourceQuotas(suite.Namespace).Update(resourceQuota)
-		suite.Require().NoError(err)
-
-		// wait for function to become healthy again
-		suite.WaitForFunctionState(getFunctionOptions,
-			functionconfig.FunctionStateReady,
-			3*time.Minute)
-		return true
-	})
 }
 
 func (suite *FunctionMonitoringTestSuite) TestNoRecoveryAfterBuildError() {
