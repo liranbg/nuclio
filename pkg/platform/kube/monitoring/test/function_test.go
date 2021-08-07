@@ -318,17 +318,8 @@ func (suite *FunctionMonitoringTestSuite) TestRecoverErrorStateFunctionWhenResou
 			functionMonitoringSleepTimeout)
 
 		// mark k8s cluster nodes as schedulable
-		suite.Logger.InfoWith("Setting cluster node as schedulable", "nodeName", nodeName)
-		_, err = suite.KubeClientSet.CoreV1().Nodes().Update(&v1.Node{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      nodeName,
-				Namespace: suite.Namespace,
-			},
-			Spec: v1.NodeSpec{
-				Unschedulable: false,
-			},
-		})
-		suite.Require().NoError(err, "Failed to set nodes schedulable")
+		err = suite.UnCordonNode(nodeName)
+		suite.Require().NoError(err, "Failed to set node schedulable")
 
 		// wait for function pods to run, meaning its deployment is available
 		suite.WaitForFunctionPods(functionName, time.Minute, func(pods []v1.Pod) bool {

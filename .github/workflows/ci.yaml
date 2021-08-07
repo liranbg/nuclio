@@ -193,7 +193,7 @@ jobs:
           # load nuclio docker images to minikube
           # TODO: change to load-
           make pull-docker-images
-          rm nuclio-docker-images*.tar.gz
+          # rm nuclio-docker-images*.tar.gz
 
       - name: Export env
         run: |
@@ -216,6 +216,7 @@ jobs:
       - name: Setup tmate session
         if: ${{ failure() }}
         uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 15
 
       - name: Run nuctl k8s tests
         run: |
@@ -326,6 +327,7 @@ jobs:
       - name: Setup tmate session
         if: ${{ failure() }}
         uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 15
 
       - name: Run k8s tests
         run: |
