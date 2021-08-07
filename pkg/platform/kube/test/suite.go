@@ -146,7 +146,7 @@ func (suite *KubeTestSuite) TearDownTest() {
 	}()
 
 	// remove nuclio function leftovers
-	var errGroup errgroup.Group
+	errGroup, _ := errgroup.WithContext(context.TODO(), suite.Logger)
 	for _, resourceKind := range []string{
 		"nucliofunctions",
 		"nuclioprojects",
