@@ -300,9 +300,6 @@ func (suite *FunctionMonitoringTestSuite) TestRecoverErrorStateFunctionWhenResou
 		// ensure function is ready
 		suite.Require().Equal(functionconfig.FunctionStateReady, function.GetStatus().State)
 
-		// get function pod, first one is enough
-		pod := suite.GetFunctionPods(functionName)[0]
-
 		suite.WithResourceQuota(&v1.ResourceQuota{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "nuclio-test-rq",
@@ -315,15 +312,7 @@ func (suite *FunctionMonitoringTestSuite) TestRecoverErrorStateFunctionWhenResou
 			},
 			Status: v1.ResourceQuotaStatus{},
 		}, func() {
-
-			// evict pod from node
-			err := suite.KubeClientSet.PolicyV1beta1().Evictions(pod.Namespace).Evict(&policyv1beta1.Eviction{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      pod.Name,
-					Namespace: pod.Namespace,
-				},
-			})
-			suite.Require().NoError(err)
+			suite.DeleteFunctionPods(functionName)
 
 			// wait for controller to mark function in error due to pods being unschedulable
 			suite.WaitForFunctionState(getFunctionOptions,

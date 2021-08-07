@@ -34,6 +34,7 @@ import (
 	"github.com/nuclio/errors"
 	"github.com/nuclio/nuclio/pkg/cmdrunner"
 	"github.com/nuclio/nuclio/pkg/common"
+	"github.com/nuclio/nuclio/pkg/errgroup"
 	"github.com/nuclio/nuclio/pkg/functionconfig"
 	"github.com/nuclio/nuclio/pkg/platform"
 	"github.com/nuclio/nuclio/pkg/platform/kube"
@@ -45,8 +46,8 @@ import (
 	"github.com/nuclio/nuclio/pkg/platform/kube/ingress"
 	"github.com/nuclio/nuclio/pkg/platformconfig"
 	processorsuite "github.com/nuclio/nuclio/pkg/processor/test/suite"
+
 	"github.com/rs/xid"
-	"golang.org/x/sync/errgroup"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
@@ -153,7 +154,7 @@ func (suite *KubeTestSuite) TearDownTest() {
 		"nuclioapigateways",
 	} {
 		resourceKind := resourceKind
-		errGroup.Go(func() error {
+		errGroup.Go(fmt.Sprintf("Delete %s resources", resourceKind), func() error {
 			return suite.deleteAllResourcesByKind(resourceKind)
 		})
 	}
@@ -377,11 +378,14 @@ func (suite *KubeTestSuite) GetNodes() []v1.Node {
 }
 
 func (suite *KubeTestSuite) DeleteFunctionPods(functionName string) {
-	errGroup, _ := errgroup.WithContext(context.TODO())
+	suite.Logger.InfoWith("deleting function pods", "functionName", functionName)
+	errGroup, _ := errgroup.WithContext(context.TODO(), suite.Logger)
 	for _, pod := range suite.GetFunctionPods(functionName) {
 		pod := pod
-		errGroup.Go(func() error {
-			suite.Logger.DebugWith("Deleting function pod", "podName", pod.Name)
+		errGroup.Go("Delete function pods", func() error {
+			suite.Logger.DebugWith("Deleting function pod",
+				"functionName", functionName,
+				"podName", pod.Name)
 			return suite.KubeClientSet.
 				CoreV1().
 				Pods(suite.Namespace).
