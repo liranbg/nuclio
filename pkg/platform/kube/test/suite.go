@@ -378,7 +378,7 @@ func (suite *KubeTestSuite) GetNodes() []v1.Node {
 }
 
 func (suite *KubeTestSuite) DeleteFunctionPods(functionName string) {
-	suite.Logger.InfoWith("deleting function pods", "functionName", functionName)
+	suite.Logger.InfoWith("Deleting function pods", "functionName", functionName)
 	errGroup, _ := errgroup.WithContext(context.TODO(), suite.Logger)
 	for _, pod := range suite.GetFunctionPods(functionName) {
 		pod := pod

@@ -234,6 +234,17 @@ func (suite *FunctionMonitoringTestSuite) TestRecoverErrorStateFunctionWhenResou
 		// ensure function is ready
 		suite.Require().Equal(functionconfig.FunctionStateReady, function.GetStatus().State)
 
+		// ensure function pods are running
+		suite.WaitForFunctionPods(functionName, time.Minute, func(pods []v1.Pod) bool {
+			suite.Logger.DebugWith("Ensure function pods are running", "pods", pods)
+			for _, pod := range pods {
+				if pod.Status.Phase != v1.PodRunning {
+					return false
+				}
+			}
+			return true
+		})
+
 		suite.WithResourceQuota(&v1.ResourceQuota{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "nuclio-test-rq",
@@ -246,6 +257,7 @@ func (suite *FunctionMonitoringTestSuite) TestRecoverErrorStateFunctionWhenResou
 			},
 			Status: v1.ResourceQuotaStatus{},
 		}, func() {
+
 			suite.DeleteFunctionPods(functionName)
 
 			// wait for controller to mark function in error due to pods being unschedulable
