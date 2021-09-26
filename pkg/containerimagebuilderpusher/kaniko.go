@@ -37,7 +37,7 @@ func NewKaniko(logger logger.Logger, kubeClientSet kubernetes.Interface,
 		return nil, errors.New("Missing kaniko builder configuration")
 	}
 
-	// Valid job name is composed from a DNS-1123 subdomains which in turn must contain only lower case
+	// Valid job name is composed of a DNS-1123 subdomains which in turn must contain only lower case
 	// alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com')
 	jobNameRegex := regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`)
 

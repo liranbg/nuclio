@@ -41,7 +41,7 @@ func NewDocker(logger logger.Logger, builderConfiguration *ContainerBuilderConfi
 }
 
 func (d *Docker) GetKind() string {
-	return "docker"
+	return ContainerBuilderKindDocker
 }
 
 func (d *Docker) BuildAndPushContainerImage(buildOptions *BuildOptions, namespace string) error {
