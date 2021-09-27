@@ -27,7 +27,7 @@ import (
 type KanikoTestSuite struct {
 	test.KubeTestSuite
 
-	nginxPodName       string
+	nginxServerName    string
 	functionWorkingDir string
 }
 
@@ -40,7 +40,7 @@ func (suite *KanikoTestSuite) SetupTest() {
 	suite.Require().NoError(err)
 
 	kubePlatform := suite.Platform.(*kube.Platform)
-	suite.nginxPodName = "nginx-server"
+	suite.nginxServerName = "nginx-server"
 	suite.createNginxServerPod()
 
 	// build images with kaniko
@@ -52,7 +52,7 @@ func (suite *KanikoTestSuite) SetupTest() {
 	newContainerBuilderPusherConfiguration.InsecurePullRegistry = true
 	newContainerBuilderPusherConfiguration.InsecurePushRegistry = true
 	newContainerBuilderPusherConfiguration.NginxAssetsURL = fmt.Sprintf(
-		"http://%s:80/assets/tar", suite.nginxPodName)
+		"http://%s:80/assets/tar", suite.nginxServerName)
 	suite.PlatformConfiguration.ContainerBuilderConfiguration = newContainerBuilderPusherConfiguration
 	kubePlatform.ContainerBuilder, err = containerimagebuilderpusher.NewClient(kubePlatform.Logger,
 		suite.PlatformConfiguration.ContainerBuilderConfiguration,
@@ -61,9 +61,11 @@ func (suite *KanikoTestSuite) SetupTest() {
 }
 
 func (suite *KanikoTestSuite) TearDownTest() {
-	suite.ExecuteKubectl([]string{"delete", "svc", suite.nginxPodName}, nil)
-	suite.ExecuteKubectl([]string{"delete", "pod", suite.nginxPodName, "--grace-period=0"}, nil)
-	err := os.RemoveAll(suite.functionWorkingDir)
+	_, err := suite.ExecuteKubectl([]string{"delete", "svc", suite.nginxServerName}, nil)
+	suite.Require().NoError(err)
+	_, err = suite.ExecuteKubectl([]string{"delete", "pod", suite.nginxServerName, "--grace-period=0"}, nil)
+	suite.Require().NoError(err)
+	err = os.RemoveAll(suite.functionWorkingDir)
 	suite.Require().NoError(err)
 
 	suite.KubeTestSuite.TearDownTest()
@@ -122,12 +124,12 @@ func (suite *KanikoTestSuite) createNginxServerPod() {
 			  }
 			]
 		  }
-		}`, suite.nginxPodName, suite.functionWorkingDir)
+		}`, suite.nginxServerName, suite.functionWorkingDir)
 	compactedBuffer := &bytes.Buffer{}
 	err := json.Compact(compactedBuffer, []byte(overrides))
 	suite.Require().NoError(err)
 
-	_, err = suite.ExecuteKubectl([]string{"run", suite.nginxPodName, "--expose"}, map[string]string{
+	_, err = suite.ExecuteKubectl([]string{"run", suite.nginxServerName, "--expose"}, map[string]string{
 		"labels":    "nuclio.io/app=test-nginx-server",
 		"image":     "nginx:latest",
 		"port":      "80",
@@ -137,7 +139,7 @@ func (suite *KanikoTestSuite) createNginxServerPod() {
 
 	// wait for pod to be run
 	err = common.RetryUntilSuccessful(3*time.Minute, time.Second, func() bool {
-		pod, getPodErr := suite.KubeClientSet.CoreV1().Pods(suite.Namespace).Get(suite.nginxPodName, metav1.GetOptions{})
+		pod, getPodErr := suite.KubeClientSet.CoreV1().Pods(suite.Namespace).Get(suite.nginxServerName, metav1.GetOptions{})
 		suite.Require().NoError(getPodErr)
 		return pod.Status.Phase == v1.PodRunning
 	})
