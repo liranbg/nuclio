@@ -75,7 +75,7 @@ func (k *Kaniko) BuildAndPushContainerImage(buildOptions *BuildOptions, namespac
 	// Generate kaniko job spec
 	kanikoJobSpec := k.compileKanikoJobSpec(namespace, buildOptions, bundleFilename)
 
-	k.logger.DebugWith("Create kaniko job", "namespace", namespace, "jobSpec", kanikoJobSpec)
+	k.logger.DebugWith("Create kaniko job", "namespace", namespace, "jobSpec", kanikoJobSpec.String())
 	kanikoJob, err := k.kubeClientSet.BatchV1().Jobs(namespace).Create(kanikoJobSpec)
 	if err != nil {
 		return errors.Wrap(err, "Failed to create kaniko job")
@@ -201,6 +201,7 @@ func (k *Kaniko) compileKanikoJobSpec(namespace string,
 	buildOptions *BuildOptions,
 	bundleFilename string) *batchv1.Job {
 
+	workingDir := path.Dir(buildOptions.ContextDir)
 	completions := int32(1)
 	backoffLimit := int32(0)
 	buildArgs := []string{
@@ -230,8 +231,8 @@ func (k *Kaniko) compileKanikoJobSpec(namespace string,
 	}
 
 	tmpFolderVolumeMount := v1.VolumeMount{
-		Name:      "tmp",
-		MountPath: "/tmp",
+		Name:      "working-dir",
+		MountPath: workingDir,
 	}
 
 	jobName := k.compileJobName(buildOptions.Image)
@@ -271,7 +272,7 @@ func (k *Kaniko) compileKanikoJobSpec(namespace string,
 								"wget",
 								fmt.Sprintf("%s/%s", k.builderConfiguration.NginxAssetsURL, bundleFilename),
 								"-P",
-								"/tmp",
+								workingDir,
 							},
 							VolumeMounts: []v1.VolumeMount{tmpFolderVolumeMount},
 						},
@@ -281,7 +282,7 @@ func (k *Kaniko) compileKanikoJobSpec(namespace string,
 							Command: []string{
 								"tar",
 								"-xvf",
-								fmt.Sprintf("/tmp/%s", bundleFilename),
+								path.Join(workingDir, bundleFilename),
 								"-C",
 								"/",
 							},
@@ -290,7 +291,7 @@ func (k *Kaniko) compileKanikoJobSpec(namespace string,
 					},
 					Volumes: []v1.Volume{
 						{
-							Name: "tmp",
+							Name: "working-dir",
 							VolumeSource: v1.VolumeSource{
 								EmptyDir: &v1.EmptyDirVolumeSource{},
 							},

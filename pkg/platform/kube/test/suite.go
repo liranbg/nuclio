@@ -98,7 +98,8 @@ func (suite *KubeTestSuite) SetupSuite() {
 	err = suite.Platform.SetExternalIPAddresses(strings.Split(suite.GetTestHost(), ","))
 	suite.Require().NoError(err, "Failed to set platform external ip addresses")
 
-	suite.RegistryURL = common.GetEnvOrDefaultString("NUCLIO_TEST_REGISTRY_URL", "localhost:5000")
+	suite.RegistryURL = common.GetEnvOrDefaultString("NUCLIO_TEST_REGISTRY_URL",
+		fmt.Sprintf("%s:5000", suite.GetTestHost()))
 
 	suite.CmdRunner, err = cmdrunner.NewShellRunner(suite.Logger)
 	suite.Require().NoError(err, "Failed to create shell runner")
@@ -139,7 +140,7 @@ func (suite *KubeTestSuite) TearDownTest() {
 	defer func() {
 
 		// delete leftovers if controller was not able to delete them
-		suite.executeKubectl([]string{"delete", "all"}, // nolint: errcheck
+		suite.ExecuteKubectl([]string{"delete", "all"}, // nolint: errcheck
 			map[string]string{
 				"selector": "nuclio.io/app",
 			})
@@ -166,7 +167,7 @@ func (suite *KubeTestSuite) TearDownTest() {
 	err := common.RetryUntilSuccessful(5*time.Minute,
 		5*time.Second,
 		func() bool {
-			results, err := suite.executeKubectl([]string{"get", "all"},
+			results, err := suite.ExecuteKubectl([]string{"get", "all"},
 				map[string]string{
 					"selector": "nuclio.io/app",
 				})
@@ -362,12 +363,12 @@ func (suite *KubeTestSuite) DrainNode(nodeName string, ignoreDaemonSet bool) err
 	if ignoreDaemonSet {
 		positionalArgs = append(positionalArgs, "--ignore-daemonsets")
 	}
-	_, err := suite.executeKubectl(positionalArgs, nil)
+	_, err := suite.ExecuteKubectl(positionalArgs, nil)
 	return err
 }
 
 func (suite *KubeTestSuite) UnCordonNode(nodeName string) error {
-	_, err := suite.executeKubectl([]string{"uncordon", nodeName}, nil)
+	_, err := suite.ExecuteKubectl([]string{"uncordon", nodeName}, nil)
 	return err
 }
 
@@ -553,7 +554,7 @@ func (suite *KubeTestSuite) verifyAPIGatewayIngress(createAPIGatewayOptions *pla
 	return ingressObject
 }
 
-func (suite *KubeTestSuite) executeKubectl(positionalArgs []string,
+func (suite *KubeTestSuite) ExecuteKubectl(positionalArgs []string,
 	namedArgs map[string]string) (cmdrunner.RunResult, error) {
 
 	argsStringSlice := []string{
@@ -574,7 +575,7 @@ func (suite *KubeTestSuite) executeKubectl(positionalArgs []string,
 }
 
 func (suite *KubeTestSuite) getResource(resourceKind, resourceName string) string {
-	results, err := suite.executeKubectl([]string{
+	results, err := suite.ExecuteKubectl([]string{
 		"get", resourceKind, resourceName},
 		map[string]string{
 			"namespace": suite.Namespace,
@@ -585,7 +586,7 @@ func (suite *KubeTestSuite) getResource(resourceKind, resourceName string) strin
 }
 
 func (suite *KubeTestSuite) deleteAllResourcesByKind(kind string) error {
-	_, err := suite.executeKubectl([]string{"delete", kind, "--all", "--force"},
+	_, err := suite.ExecuteKubectl([]string{"delete", kind, "--all", "--force"},
 		map[string]string{
 			"grace-period": "0",
 		})
