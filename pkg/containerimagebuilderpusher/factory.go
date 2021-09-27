@@ -9,14 +9,7 @@ func NewClient(logger logger.Logger,
 	configuration *ContainerBuilderConfiguration,
 	kubeClientSet kubernetes.Interface) (BuilderPusher, error) {
 
-	var kind ContainerBuilderKind
-	if configuration == nil {
-		kind = ContainerBuilderKindDocker
-	} else {
-		kind = configuration.Kind
-	}
-
-	switch kind {
+	switch configuration.Kind {
 	case ContainerBuilderKindKaniko:
 		return NewKaniko(logger, kubeClientSet, configuration)
 	case ContainerBuilderKindDocker:
@@ -25,7 +18,8 @@ func NewClient(logger logger.Logger,
 		return NewNop(logger, configuration)
 
 	default:
-		logger.WarnWith("No explicit container image builder pusher client was given, defaulting to Docker")
+		logger.WarnWith("Unknown container image builder pusher kind was given, defaulting to Docker",
+			"kind", configuration.Kind)
 		return NewDocker(logger, configuration)
 	}
 }
