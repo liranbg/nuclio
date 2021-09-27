@@ -47,6 +47,8 @@ func (suite *KanikoTestSuite) SetupTest() {
 	newContainerBuilderPusherConfiguration := containerimagebuilderpusher.NewContainerBuilderConfiguration()
 	newContainerBuilderPusherConfiguration.Kind = containerimagebuilderpusher.ContainerBuilderKindKaniko
 	newContainerBuilderPusherConfiguration.CreateFunctionTarSymlinkOntoNginxAssetsDir = false
+	newContainerBuilderPusherConfiguration.KanikoImage = "gcr.io/kaniko-project/executor:v1.6.0"
+	newContainerBuilderPusherConfiguration.BusyBoxImage = "busybox:1.33.1"
 	newContainerBuilderPusherConfiguration.InsecurePullRegistry = true
 	newContainerBuilderPusherConfiguration.InsecurePushRegistry = true
 	newContainerBuilderPusherConfiguration.NginxAssetsURL = fmt.Sprintf(
@@ -59,12 +61,12 @@ func (suite *KanikoTestSuite) SetupTest() {
 }
 
 func (suite *KanikoTestSuite) TearDownTest() {
-	suite.KubeTestSuite.TearDownTest()
+	suite.ExecuteKubectl([]string{"delete", "svc", suite.nginxPodName}, nil)
+	suite.ExecuteKubectl([]string{"delete", "pod", suite.nginxPodName, "--grace-period=0"}, nil)
 	err := os.RemoveAll(suite.functionWorkingDir)
 	suite.Require().NoError(err)
 
-	defer suite.ExecuteKubectl([]string{"delete", "svc", suite.nginxPodName}, nil)
-	defer suite.ExecuteKubectl([]string{"delete", "pod", suite.nginxPodName, "--grace-period=0"}, nil)
+	suite.KubeTestSuite.TearDownTest()
 }
 
 func (suite *KanikoTestSuite) TestBuildSanity() {
