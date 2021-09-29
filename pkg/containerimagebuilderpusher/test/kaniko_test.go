@@ -89,7 +89,7 @@ func (suite *KanikoTestSuite) TestBuildSanity() {
 func (suite *KanikoTestSuite) CompileCreateFunctionOptions(functionName string) *platform.CreateFunctionOptions {
 	createFunctionOptions := suite.KubeTestSuite.CompileCreateFunctionOptions(functionName)
 	createFunctionOptions.FunctionConfig.Spec.Build.TempDir = suite.functionWorkingDir
-	createFunctionOptions.FunctionConfig.Spec.Build.Registry = suite.RegistryURL
+	createFunctionOptions.FunctionConfig.Spec.Build.Registry = fmt.Sprintf("%s:5000", suite.GetTestHost())
 	return createFunctionOptions
 }
 
