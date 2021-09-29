@@ -311,6 +311,10 @@ jobs:
 
           make test-k8s
 
+      - name: Debug
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+
   test_python:
     name: Test python
     runs-on: ubuntu-latest
