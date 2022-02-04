@@ -105,7 +105,7 @@ func (i *importCommandeer) importFunctions(ctx context.Context,
 	for _, functionConfig := range functionConfigs {
 		functionConfig := functionConfig // https://golang.org/doc/faq#closures_and_goroutines
 		errGroup.Go("Import function", func() error {
-			return i.importFunction(context.Background(), functionConfig, project)
+			return i.importFunction(ctx, functionConfig, project)
 		})
 	}
 
@@ -321,14 +321,14 @@ func (i *importProjectCommandeer) importAPIGateway(ctx context.Context, apiGatew
 
 func (i *importProjectCommandeer) importFunctionEvents(ctx context.Context,
 	functionEvents map[string]*platform.FunctionEventConfig) error {
-	errGroup, errGroupCtx := errgroup.WithContext(ctx, i.rootCommandeer.loggerInstance)
+	errGroup, _ := errgroup.WithContext(ctx, i.rootCommandeer.loggerInstance)
 
 	i.rootCommandeer.loggerInstance.DebugWithCtx(ctx, "Importing function events",
 		"functionEvents", functionEvents)
 	for _, functionEventConfig := range functionEvents {
 		functionEventConfig := functionEventConfig // https://golang.org/doc/faq#closures_and_goroutines
 		errGroup.Go("Import function event", func() error {
-			return i.importFunctionEvent(errGroupCtx, functionEventConfig)
+			return i.importFunctionEvent(ctx, functionEventConfig)
 		})
 	}
 
@@ -337,21 +337,21 @@ func (i *importProjectCommandeer) importFunctionEvents(ctx context.Context,
 
 func (i *importProjectCommandeer) importAPIGateways(ctx context.Context,
 	apiGateways map[string]*platform.APIGatewayConfig) error {
-	errGroup, errGroupCtx := errgroup.WithContext(ctx, i.rootCommandeer.loggerInstance)
 
-	i.rootCommandeer.loggerInstance.DebugWithCtx(ctx, "Importing api gateways", "apiGateways", apiGateways)
+	i.rootCommandeer.loggerInstance.DebugWithCtx(ctx,
+		"Importing api gateways",
+		"apiGateways", apiGateways)
 
 	if apiGateways == nil {
 		return nil
 	}
-
+	errGroup, _ := errgroup.WithContext(ctx, i.rootCommandeer.loggerInstance)
 	for _, apiGatewayConfig := range apiGateways {
 		apiGatewayConfig := apiGatewayConfig // https://golang.org/doc/faq#closures_and_goroutines
 		errGroup.Go("Import API Gateway", func() error {
-			return i.importAPIGateway(errGroupCtx, apiGatewayConfig)
+			return i.importAPIGateway(ctx, apiGatewayConfig)
 		})
 	}
-
 	return errGroup.Wait()
 }
 
