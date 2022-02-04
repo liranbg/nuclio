@@ -149,10 +149,10 @@ func (suite *Suite) ExecuteNuctl(positionalArgs []string,
 		argsStringSlice = append(argsStringSlice, fmt.Sprintf("--%s", argName), argValue)
 	}
 
+	suite.logger.DebugWith("Executing nuctl", "args", argsStringSlice)
+
 	// override os.Args (this can't go wrong horribly, can it?)
 	os.Args = argsStringSlice
-
-	suite.logger.DebugWith("Executing nuctl", "args", argsStringSlice)
 
 	// execute
 	return rootCommandeer.Execute()
