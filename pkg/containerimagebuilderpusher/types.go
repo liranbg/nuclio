@@ -11,26 +11,77 @@ import (
 	"k8s.io/api/core/v1"
 )
 
+type BuilderKind string
+
+const (
+	BuilderKindKaniko = "kaniko"
+	BuilderKindNop    = "nop"
+	BuilderKindDocker = "docker"
+)
+
 // BuildOptions are options for building a container image
 type BuildOptions struct {
-	Image                   string
-	ContextDir              string
-	TempDir                 string
-	DockerfileInfo          *runtime.ProcessorDockerfileInfo
-	NoCache                 bool
-	Pull                    bool
-	NoBaseImagePull         bool
-	BuildArgs               map[string]string
-	RegistryURL             string
-	SecretName              string
-	OutputImageFile         string
-	BuildTimeoutSeconds     int64
+	Image               string
+	ContextDir          string
+	TempDir             string
+	DockerfileInfo      *runtime.ProcessorDockerfileInfo
+	NoCache             bool
+	Pull                bool
+	NoBaseImagePull     bool
+	BuildArgs           map[string]string
+	RegistryURL         string
+	SecretName          string
+	OutputImageFile     string
+	BuildTimeoutSeconds int64
+
+	// kaniko options
+	KanikoOptions *KanikoOptions
+
+	// kaniko pod runtime configuration
 	Affinity                *v1.Affinity
 	NodeSelector            map[string]string
 	NodeName                string
 	PriorityClassName       string
 	Tolerations             []v1.Toleration
 	ReadinessTimeoutSeconds int
+}
+
+type KanikoOptions struct {
+
+	// Set this flag to cache copy layers.
+	// https://github.com/GoogleContainerTools/kaniko#--cache-copy-layers
+	CacheCopyLayers bool
+
+	// Set this to false in order to prevent tar compression for cached layers
+	// https://github.com/GoogleContainerTools/kaniko#--compressed-caching
+	CompressedCaching bool
+
+	// This flag takes a single snapshot of the filesystem at the end of the build,
+	// so only one layer will be appended to the base image.
+	// https://github.com/GoogleContainerTools/kaniko#--single-snapshot
+	SingleSnapshot bool
+
+	// Use this flag to set how kaniko will snapshot the filesystem.
+	// - full (default): the full file contents and metadata are considered when snapshotting.
+	//   This is the least performant option, but also the most robust.
+	// - redo: the file mtime, size, mode, owner uid and gid will be considered when snapshotting.
+	//   This may be up to 50% faster than "full", particularly if your project has a large number files.
+	// - time: only file mtime will be considered when snapshotting
+	// https://github.com/GoogleContainerTools/kaniko#--snapshotmode
+	SnapshotMode string
+
+	// Set this flag to the number of retries that should happen for the extracting an image filesystem. Defaults to 0.
+	// https://github.com/GoogleContainerTools/kaniko#--image-fs-extract-retry
+	ImageFSExtractRetry int
+
+	// Set this flag to strip timestamps out of the built image and make it reproducible.
+	// https://github.com/GoogleContainerTools/kaniko#--reproducible
+	Reproducible bool
+
+	// Use the experimental run implementation for detecting changes without requiring file system snapshots.
+	// In some cases, this may improve build performance by 75%.
+	// https://github.com/GoogleContainerTools/kaniko#--use-new-run
+	RunV2 bool
 }
 
 type ContainerBuilderConfiguration struct {

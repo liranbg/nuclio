@@ -65,7 +65,7 @@ func NewConfiguration(id string, triggerConfiguration *functionconfig.Trigger,
 	// create base
 	newConfiguration.Configuration = *trigger.NewConfiguration(id, triggerConfiguration, runtimeConfiguration)
 
-	if err := newConfiguration.PopulateConfigurationFromAnnotations([]trigger.AnnotationConfigField{
+	if err := runtimeConfiguration.PopulateConfigurationFromAnnotations([]functionconfig.AnnotationConfigField{
 		{Key: "custom.nuclio.io/v3iostream-window-size", ValueUInt64: &newConfiguration.AckWindowSize},
 	}); err != nil {
 		return nil, errors.Wrap(err, "Failed to populate configuration from annotations")
@@ -166,7 +166,7 @@ func (c *Configuration) getStreamConsumerGroupConfig() (*streamconsumergroup.Con
 	streamConsumerGroupConfig.Claim.RecordBatchFetch.NumRecordsInBatch = c.ReadBatchSize
 	streamConsumerGroupConfig.Claim.RecordBatchFetch.InitialLocation = c.seekTo
 
-	for _, durationConfigField := range []trigger.DurationConfigField{
+	for _, durationConfigField := range []functionconfig.DurationConfigField{
 		{
 			Name:    "session timeout",
 			Value:   c.SessionTimeout,
@@ -192,7 +192,7 @@ func (c *Configuration) getStreamConsumerGroupConfig() (*streamconsumergroup.Con
 			Default: 1 * time.Second,
 		},
 	} {
-		if err := c.ParseDurationOrDefault(&durationConfigField); err != nil {
+		if err := c.RuntimeConfiguration.ParseDurationOrDefault(&durationConfigField); err != nil {
 			return nil, err
 		}
 	}

@@ -108,7 +108,7 @@ func NewConfiguration(id string,
 
 	workerAllocationModeValue := ""
 
-	err := newConfiguration.PopulateConfigurationFromAnnotations([]trigger.AnnotationConfigField{
+	err := runtimeConfiguration.PopulateConfigurationFromAnnotations([]functionconfig.AnnotationConfigField{
 		{Key: "nuclio.io/kafka-session-timeout", ValueString: &newConfiguration.SessionTimeout},
 		{Key: "nuclio.io/kafka-heartbeat-interval", ValueString: &newConfiguration.HeartbeatInterval},
 		{Key: "nuclio.io/kafka-max-processing-time", ValueString: &newConfiguration.MaxProcessingTime},
@@ -220,7 +220,7 @@ func NewConfiguration(id string,
 		return nil, errors.Wrap(err, "Failed to resolve brokers")
 	}
 
-	for _, durationConfigField := range []trigger.DurationConfigField{
+	for _, durationConfigField := range []functionconfig.DurationConfigField{
 		{
 			Name:    "session timeout",
 			Value:   newConfiguration.SessionTimeout,
@@ -270,7 +270,7 @@ func NewConfiguration(id string,
 			Default: 5 * time.Second,
 		},
 	} {
-		if err = newConfiguration.ParseDurationOrDefault(&durationConfigField); err != nil {
+		if err = newConfiguration.RuntimeConfiguration.ParseDurationOrDefault(&durationConfigField); err != nil {
 			return nil, err
 		}
 	}

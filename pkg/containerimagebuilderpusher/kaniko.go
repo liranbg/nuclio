@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -39,7 +40,7 @@ func NewKaniko(logger logger.Logger,
 		return nil, errors.New("Missing kaniko builder configuration")
 	}
 
-	// Valid job name is composed from a DNS-1123 subdomains which in turn must contain only lower case
+	// Valid job name is composed of a DNS-1123 subdomains which in turn must contain only lower case
 	// alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com')
 	jobNameRegex := regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`)
 
@@ -60,7 +61,7 @@ func NewKaniko(logger logger.Logger,
 }
 
 func (k *Kaniko) GetKind() string {
-	return "kaniko"
+	return BuilderKindKaniko
 }
 
 func (k *Kaniko) BuildAndPushContainerImage(ctx context.Context, buildOptions *BuildOptions, namespace string) error {
@@ -230,6 +231,16 @@ func (k *Kaniko) compileJobSpec(namespace string,
 
 	if k.builderConfiguration.CacheRepo != "" {
 		buildArgs = append(buildArgs, fmt.Sprintf("--cache-repo=%s", k.builderConfiguration.CacheRepo))
+	}
+
+	if buildOptions.KanikoOptions != nil {
+		buildArgs = append(buildArgs, fmt.Sprintf("--use-new-run=%s", strconv.FormatBool(buildOptions.KanikoOptions.RunV2)))
+		buildArgs = append(buildArgs, fmt.Sprintf("--single-snapshot=%s", strconv.FormatBool(buildOptions.KanikoOptions.SingleSnapshot)))
+		buildArgs = append(buildArgs, fmt.Sprintf("--compressed-caching=%s", strconv.FormatBool(buildOptions.KanikoOptions.CompressedCaching)))
+		buildArgs = append(buildArgs, fmt.Sprintf("--reproducible=%s", strconv.FormatBool(buildOptions.KanikoOptions.Reproducible)))
+		buildArgs = append(buildArgs, fmt.Sprintf("--cache-copy-layers=%s", strconv.FormatBool(buildOptions.KanikoOptions.CacheCopyLayers)))
+		buildArgs = append(buildArgs, fmt.Sprintf("--image-fs-extract-retry=%d", buildOptions.KanikoOptions.ImageFSExtractRetry))
+		buildArgs = append(buildArgs, fmt.Sprintf("--snapshotMode=%s", buildOptions.KanikoOptions.SnapshotMode))
 	}
 
 	// Add build options args

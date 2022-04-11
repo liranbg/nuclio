@@ -20,8 +20,10 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/nuclio/errors"
 	"github.com/v3io/scaler/pkg/scalertypes"
 	appsv1 "k8s.io/api/apps/v1"
 	autosv2 "k8s.io/api/autoscaling/v2beta1"
@@ -684,6 +686,59 @@ func (c *Config) PruneNodeSelector(nodeSelector map[string]string) {
 			delete(c.Spec.NodeSelector, key)
 		}
 	}
+}
+
+// PopulateConfigurationFromAnnotations allows setting configuration via annotations, for experimental settings
+func (c *Config) PopulateConfigurationFromAnnotations(annotationConfigFields []AnnotationConfigField) error {
+	var err error
+
+	for _, annotationConfigField := range annotationConfigFields {
+		annotationValue, annotationKeyExists := c.Meta.Annotations[annotationConfigField.Key]
+		if !annotationKeyExists {
+			continue
+		}
+
+		switch {
+		case annotationConfigField.ValueString != nil:
+			*annotationConfigField.ValueString = annotationValue
+		case annotationConfigField.ValueInt != nil:
+			*annotationConfigField.ValueInt, err = strconv.Atoi(annotationValue)
+			if err != nil {
+				return errors.Wrapf(err, "Annotation %s must be numeric", annotationConfigField.Key)
+			}
+		case annotationConfigField.ValueBool != nil:
+			*annotationConfigField.ValueBool, err = strconv.ParseBool(annotationValue)
+			if err != nil {
+				return errors.Wrapf(err, "Annotation %s must represent boolean", annotationConfigField.Key)
+			}
+		case annotationConfigField.ValueListString != nil:
+			annotationConfigField.ValueListString = strings.Split(annotationValue, ",")
+		case annotationConfigField.ValueUInt64 != nil:
+			*annotationConfigField.ValueUInt64, err = strconv.ParseUint(annotationValue, 10, 64)
+			if err != nil {
+				return errors.Wrapf(err, "Annotation %s must be positive numeric (uint64)", annotationConfigField.Key)
+			}
+		}
+	}
+
+	return nil
+}
+
+// ParseDurationOrDefault parses a duration string into a time.duration field. if empty, sets the field to the default
+func (c *Config) ParseDurationOrDefault(durationConfigField *DurationConfigField) error {
+	if durationConfigField.Value == "" {
+		*durationConfigField.Field = durationConfigField.Default
+		return nil
+	}
+
+	parsedDurationValue, err := time.ParseDuration(durationConfigField.Value)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to parse %s", durationConfigField.Name)
+	}
+
+	*durationConfigField.Field = parsedDurationValue
+
+	return nil
 }
 
 // FunctionState is state of function

@@ -1052,6 +1052,34 @@ func (b *Builder) buildProcessorImage() (string, error) {
 	imageName := fmt.Sprintf("%s:%s", b.processorImage.imageName, b.processorImage.imageTag)
 	registryURL := b.options.FunctionConfig.Spec.Build.Registry
 
+	var KanikoOptions *containerimagebuilderpusher.KanikoOptions
+	if b.platform.GetContainerBuilderKind() == containerimagebuilderpusher.BuilderKindKaniko {
+		KanikoOptions = &containerimagebuilderpusher.KanikoOptions{
+
+			// defaults taken from
+			// https://github.com/GoogleContainerTools/kaniko#--compressed-caching
+			SnapshotMode:        "full",
+			ImageFSExtractRetry: 0,
+			CompressedCaching:   true,
+			CacheCopyLayers:     false,
+			RunV2:               false,
+			Reproducible:        false,
+			SingleSnapshot:      false,
+		}
+
+		if err := b.options.FunctionConfig.PopulateConfigurationFromAnnotations([]functionconfig.AnnotationConfigField{
+			{Key: "nuclio.io/build-kaniko-image-fs-extract-retry", ValueInt: &KanikoOptions.ImageFSExtractRetry},
+			{Key: "nuclio.io/build-kaniko-snapshot-mode", ValueString: &KanikoOptions.SnapshotMode},
+			{Key: "nuclio.io/build-kaniko-disable-compress-caching", ValueBool: &KanikoOptions.CompressedCaching},
+			{Key: "nuclio.io/build-kaniko-cache-copy-layers", ValueBool: &KanikoOptions.CacheCopyLayers},
+			{Key: "nuclio.io/build-kaniko-run-v2", ValueBool: &KanikoOptions.RunV2},
+			{Key: "nuclio.io/build-kaniko-reproducible", ValueBool: &KanikoOptions.Reproducible},
+			{Key: "nuclio.io/build-kaniko-single-snapshot", ValueBool: &KanikoOptions.SingleSnapshot},
+		}); err != nil {
+			return "", errors.Wrap(err, "Failed to populate kaniko options configuration from function annotations")
+		}
+	}
+
 	b.logger.InfoWith("Building processor image",
 		"registryURL", registryURL,
 		"imageName", imageName)
@@ -1082,6 +1110,7 @@ func (b *Builder) buildProcessorImage() (string, error) {
 			Tolerations:       b.options.FunctionConfig.Spec.Tolerations,
 			ReadinessTimeoutSeconds: b.platform.GetConfig().GetFunctionReadinessTimeoutOrDefault(
 				b.options.FunctionConfig.Spec.ReadinessTimeoutSeconds),
+			KanikoOptions: KanikoOptions,
 		})
 
 	return imageName, err

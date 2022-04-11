@@ -20,7 +20,7 @@ func NewNop(logger logger.Logger, builderConfiguration *ContainerBuilderConfigur
 }
 
 func (n Nop) GetKind() string {
-	return "nop"
+	return BuilderKindNop
 }
 
 func (n Nop) BuildAndPushContainerImage(ctx context.Context, buildOptions *BuildOptions, namespace string) error {
