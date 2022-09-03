@@ -219,7 +219,7 @@ jobs:
         kubernetes version: "v1.23.7"
         driver: docker
         github token: ${{ github.token }}
-        start args: "--addons registry --addons ingress"
+        start args: "--addons registry --addons ingress --ports=127.0.0.1:30060:30060"
         container runtime: containerd
 
     - name: Export env
