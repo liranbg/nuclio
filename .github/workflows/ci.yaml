@@ -182,6 +182,58 @@ jobs:
           name: nuclio-docker-images
           path: nuclio-docker-images-*.tar.gz
 
+  test_k8s_func_test:
+    name: Test Kubernetes Functional
+    runs-on: ubuntu-latest
+    needs:
+      - build_docker_images
+    steps:
+    - name: Dump GitHub context
+      run: echo "$GITHUB_CONTEXT"
+      env:
+      GITHUB_CONTEXT: ${{ toJson(github) }}
+
+    - name: Dump runner context
+      run: echo "$RUNNER_CONTEXT"
+      env:
+      RUNNER_CONTEXT: ${{ toJson(runner) }}
+
+    - name: Dump github ref
+      run: echo "$GITHUB_REF"
+
+    - uses: actions/checkout@v3
+
+    - uses: manusa/actions-setup-minikube@v2.7.0
+      with:
+        minikube version: "v1.26.1"
+        kubernetes version: "v1.23.7"
+        driver: docker
+        github token: ${{ github.token }}
+        start args: "--addons registry --addons ingress"
+        container runtime: containerd
+
+    - name: Export env
+      run: |
+        echo "NUCLIO_TEST_NAMESPACE=nuclio-test" >> $GITHUB_ENV
+        echo "NUCLIO_TEST_MINIKUBE_PROFILE=nuclio-test" >> $GITHUB_ENV
+
+    - name: Fetch nuclio docker images
+      uses: actions/download-artifact@v3
+      with:
+        name: nuclio-docker-images
+
+    - name: Load nuclio docker images
+      run: |
+        
+        # load nuclio docker images to minikube
+        minikube --profile $NUCLIO_TEST_MINIKUBE_PROFILE image load nuclio-docker-images*.tar.gz
+        rm nuclio-docker-images*.tar.gz
+        #make load-docker-images
+
+    - name: Run k8s functional tests
+      run: |
+        make test-k8s-functional
+
   test_k8s_nuctl:
     name: Test Kubernetes nuctl
     runs-on: ubuntu-latest
