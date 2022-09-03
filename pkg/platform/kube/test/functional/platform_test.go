@@ -48,6 +48,7 @@ type PlatformTestSuite struct {
 	logger          logger.Logger
 	cmdRunner       cmdrunner.CmdRunner
 	registryURL     string
+	runRegistryURL  string
 	minikubeProfile string
 	namespace       string
 	backendAPIURL   string
@@ -69,6 +70,7 @@ func (suite *PlatformTestSuite) SetupSuite() {
 	// assumes that minikube exposed the backend API on port 30060
 	suite.backendAPIURL = common.GetEnvOrDefaultString("NUCLIO_TEST_BACKEND_API_URL", "http://localhost:30060/api")
 	suite.registryURL = suite.resolveInClusterRegistryURL()
+	suite.runRegistryURL = common.GetEnvOrDefaultString("NUCLIO_TEST_RUN_REGISTRY_URL", suite.registryURL)
 }
 
 func (suite *PlatformTestSuite) SetupTest() {
@@ -98,7 +100,7 @@ func (suite *PlatformTestSuite) compileFunctionConfig() *functionconfig.Config {
 	functionConfig := functionconfig.NewConfig()
 	functionConfig.Meta.Namespace = suite.namespace
 	functionConfig.Meta.Name = "test-func" + xid.New().String()
-	functionConfig.Spec.RunRegistry = suite.registryURL
+	functionConfig.Spec.RunRegistry = suite.runRegistryURL
 	functionConfig.Spec.Build.Registry = suite.registryURL
 	functionConfig.Spec.Handler = "main:handler"
 	functionConfig.Spec.Runtime = "python:3.8"

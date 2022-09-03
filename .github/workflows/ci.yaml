@@ -226,6 +226,7 @@ jobs:
       run: |
         echo "NUCLIO_TEST_NAMESPACE=nuclio-test" >> $GITHUB_ENV
         echo "NUCLIO_TEST_MINIKUBE_PROFILE=minikube" >> $GITHUB_ENV
+        echo "NUCLIO_TEST_RUN_REGISTRY_URL=localhost:5000" >> $GITHUB_ENV
 #
 #    - name: Fetch nuclio docker images
 #      uses: actions/download-artifact@v3
