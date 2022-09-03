@@ -188,15 +188,16 @@ jobs:
     needs:
       - build_docker_images
     steps:
+
     - name: Dump GitHub context
       run: echo "$GITHUB_CONTEXT"
       env:
-      GITHUB_CONTEXT: ${{ toJson(github) }}
+        GITHUB_CONTEXT: ${{ toJson(github) }}
 
     - name: Dump runner context
       run: echo "$RUNNER_CONTEXT"
       env:
-      RUNNER_CONTEXT: ${{ toJson(runner) }}
+        RUNNER_CONTEXT: ${{ toJson(runner) }}
 
     - name: Dump github ref
       run: echo "$GITHUB_REF"
