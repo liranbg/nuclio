@@ -227,19 +227,16 @@ jobs:
         echo "NUCLIO_TEST_NAMESPACE=nuclio-test" >> $GITHUB_ENV
         echo "NUCLIO_TEST_MINIKUBE_PROFILE=minikube" >> $GITHUB_ENV
         echo "NUCLIO_TEST_RUN_REGISTRY_URL=localhost:5000" >> $GITHUB_ENV
-#
-#    - name: Fetch nuclio docker images
-#      uses: actions/download-artifact@v3
-#      with:
-#        name: nuclio-docker-images
-#
-#    - name: Load nuclio docker images
-#      run: |
-#
-#        # load nuclio docker images to minikube
-#        minikube --profile $NUCLIO_TEST_MINIKUBE_PROFILE image load nuclio-docker-images*.tar.gz
-#        rm nuclio-docker-images*.tar.gz
-#        #make load-docker-images
+
+    - name: Fetch nuclio docker images
+      uses: actions/download-artifact@v3
+      with:
+        name: nuclio-docker-images
+
+    - name: Load nuclio docker images to minikube
+      run: |
+        minikube --profile $NUCLIO_TEST_MINIKUBE_PROFILE image load nuclio-docker-images*.tar.gz
+        rm nuclio-docker-images*.tar.gz
 
     - name: Run k8s functional tests
       run: |
