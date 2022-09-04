@@ -79,11 +79,12 @@ func (suite *PlatformTestSuite) SetupTest() {
 
 func (suite *PlatformTestSuite) TearDownTest() {
 
+	// NOTE: uncomment if we have more tests that needs "clean" environment
 	// cleanup nuclio via helm
-	suite.executeHelm(nil, []string{"delete", "nuclio"}, nil)
+	//suite.executeHelm(nil, []string{"delete", "nuclio"}, nil)
 
 	// delete namespace
-	suite.executeKubectl([]string{"delete", "namespace", suite.namespace}, nil)
+	//suite.executeKubectl([]string{"delete", "namespace", suite.namespace}, nil)
 }
 
 func (suite *PlatformTestSuite) TestBuildAndDeployFunctionWithKaniko() {
