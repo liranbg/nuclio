@@ -242,6 +242,11 @@ jobs:
       run: |
         make test-k8s-functional
 
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
+      if: ${{ failure() }}
+
+
   test_k8s_nuctl:
     name: Test Kubernetes nuctl
     runs-on: ubuntu-latest
