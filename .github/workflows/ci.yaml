@@ -235,10 +235,8 @@ jobs:
 
     - name: Load nuclio docker images to minikube
       run: |
-        ls -laht
-        minikube --profile $NUCLIO_TEST_MINIKUBE_PROFILE image ls
-        minikube --profile $NUCLIO_TEST_MINIKUBE_PROFILE image load nuclio-docker-images*.tar.gz
-        minikube --profile $NUCLIO_TEST_MINIKUBE_PROFILE image ls
+        docker load -i nuclio-docker-images*.tar.gz | awk '{print $3}' | tee /tmp/nuclio-docker-images.txt
+        cat /tmp/nuclio-docker-images.txt | xargs -I {} minikube image load {}
 
     - name: Run k8s functional tests
       run: |
